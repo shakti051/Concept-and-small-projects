@@ -1,0 +1,44 @@
+void main() {
+  var data = 
+ 
+{
+    "name": 'John Doe',
+    "age": 30,
+    "address": {
+      "street": '123 Main St',
+      "city": 'Anytown',
+      "country": 'USA',
+      "coordinates": {"latitude": 40.7128, "longitude": -74.0060}
+    },
+    "contacts": {
+      "email": 'john.doe@example.com',
+      "phone": {
+        "home": '123-456-7890',
+        "work": '987-654-3210',
+        "mobile": '555-555-5555'
+      }
+    },
+    "interests": ['programming', 'hiking', 'reading'],
+    "projects": [
+      {
+        "name": 'Project A',
+        "description": 'Lorem ipsum dolor sit amet...',
+        "status": 'In progress'
+      },
+      {
+        "name": 'Project B',
+        "description": 'Consectetur adipiscing elit...',
+        "status": 'Completed'
+      }
+    ]
+  };
+ 
+  
+//   print(data["name"]);
+//   print(data["age"]);
+//   print(data["address"]);
+//   print(data["contacts"]);
+//   print(data["projects"]);
+//  data.forEach((k,v) => print("got key $k with $v"));
+  data.forEach((key,value)=>print("$key : $value"));
+}

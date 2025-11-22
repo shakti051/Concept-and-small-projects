@@ -1,0 +1,142 @@
+1. Print the word with longest length in dart.
+
+void main() {
+     String s = "My name is Shaktijhjhjhn";
+       List<String> str = s.split(" ");
+        String largest = "";
+        for (int i = 0;i<str.length;i++){
+               if(str[i].length > largest.length){
+                 largest = str[i];
+               }
+        }
+       print(largest);
+}
+
+2. Revese words in a string
+
+void main() 
+{
+  String s = "My name is Shakti";
+  List<String> str = s.split(" ");
+  String revString = "";
+  for (int  i = str.length-1; i>=0 ; i--) {
+      revString += str[i]+ " ";
+      }
+  print(revString);
+}
+
+3. Reverse every single word of string
+
+void main() 
+{
+  String s = "My name is Shakti";
+  List<String> str = s.split(" ");
+  String revString = "";
+  for (int  i = 0 ;i<str.length;i++) {
+      String word = str[i];
+      String revWord = "";
+        for(int j = word.length-1;j>=0;j--){
+          revWord = revWord+ word[j];
+        }
+        revString += revWord+" ";
+      }
+  print(revString);
+}
+
+4. Access List element in dart:-
+
+void main() {
+  List<String> fruit = ['apple','grapes','guave'];
+  
+print(fruit[1]);
+fruit.forEach((names)=>print(names));
+for(String name in fruit)
+        print(name);
+fruit.asMap().forEach((index,value)=>print("$index : $value")); 
+}
+
+5. Second largest element in an array
+
+ void main() {
+  List<int> arr = [1, 2, 4, 7, 7, 5];
+  int largest = arr[0];
+  int second = arr[1];
+   
+   if(second>largest){
+     int temp = largest;
+     largest = second;
+     second =temp;
+   }
+    for(int i=2;i<arr.length;i++){
+      if(arr[i]>largest){
+        second = largest;
+        largest = arr[i];
+      }else if(arr[i]>second && arr[i]!= largest){
+        second = arr[i];
+      }
+    }
+   print("$second");
+}
+
+6. Move zeros to the end of the list
+
+void main() {
+  List<int> arr = [1, 0, 2, 3, 2, 0, 0, 4, 5, 1];
+  int n = arr.length;        
+  int j = 0;
+  for(int i=0;i<n;i++){
+    if(arr[i]!=0){
+      int temp = arr[i];
+      arr[i]=arr[j];
+      arr[j++]= temp;
+    }
+  }
+print(arr);       
+}
+
+7. Length of longest subarray with the given sum also print the array:-
+
+import 'dart:math';
+import 'dart:io';
+void main() {
+  List<int> arr = [10, 5, 2, 7, 1, 9];
+  int n = arr.length;
+  int k =15; // Target sum
+  int startIndex = -1;
+  int endIndex = -1;
+  int maxLength = 0;
+    int sum = 0;
+    Map<int, int> map = {};
+    for (int i = 0; i < n; i++) {
+      sum += arr[i];
+      if (sum == k) {
+        maxLength = max(maxLength, i + 1);
+      }
+
+      int removeSum = sum - k;
+      if (map.containsKey(removeSum)) {
+        int currentLength = i - map[removeSum]!;
+        if(currentLength>maxLength){
+          maxLength = currentLength;
+         startIndex =  map[removeSum]!+1;
+         endIndex = i;            
+        }
+      }
+      if (!map.containsKey(sum)) {
+        map[sum] = i;
+      }
+    }
+
+print(maxLength);
+print("the array is:");
+for(int i= startIndex;i<=endIndex;i++){
+stdout.write("${arr[i]} ");
+}
+}
+
+
+
+
+
+
+
