@@ -134,6 +134,13 @@ stdout.write("${arr[i]} ");
 }
 }
 
+8. Initialize first alphabate like in title case
+
+void main(){
+  String str= "i am flutter dev";
+  String result = str.split(" ").map((word)=>word.isEmpty? word:'${word[0].toUpperCase()}${word.substring(1)}').join(" ");
+  print(result);
+}
 
 
 
