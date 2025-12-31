@@ -1,0 +1,245 @@
+{
+	"info": {
+		"_postman_id": "1bd4336d-520d-43ec-a291-2d670e6c0865",
+		"name": "flutter_c",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "13718741"
+	},
+	"item": [
+		{
+			"name": "signup",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\":\"2@gmail.com\",\n    \"password\":\"123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8181/api/v1/createUser",
+					"host": [
+						"localhost"
+					],
+					"port": "8181",
+					"path": [
+						"api",
+						"v1",
+						"createUser"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "signup",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\":\"2@gmail.com\",\n    \"password\":\"123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8181/api/v1/createUser",
+							"host": [
+								"localhost"
+							],
+							"port": "8181",
+							"path": [
+								"api",
+								"v1",
+								"createUser"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Date",
+							"value": "Wed, 13 Mar 2024 13:30:00 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "36"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"msg\": \"User created successfully!\"\n}"
+				}
+			]
+		},
+		{
+			"name": "login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\":\"2@gmail.com\",\n    \"password\":\"123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8181/api/v1/userLogin",
+					"host": [
+						"localhost"
+					],
+					"port": "8181",
+					"path": [
+						"api",
+						"v1",
+						"userLogin"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "signin",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\":\"2@gmail.com\",\n    \"password\":\"123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8181/api/v1/userLogin",
+							"host": [
+								"localhost"
+							],
+							"port": "8181",
+							"path": [
+								"api",
+								"v1",
+								"userLogin"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Date",
+							"value": "Wed, 13 Mar 2024 13:30:37 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "108"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"email\": \"2@gmail.com\",\n    \"password\": \"123\",\n    \"accessToken\": \"32|9cSNrbjAeq6lwD4Uefi5k47nRHksQb7XhsciId1Uf65cfa89\"\n}"
+				}
+			]
+		},
+		{
+			"name": "getNotifications",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "32|9cSNrbjAeq6lwD4Uefi5k47nRHksQb7XhsciId1Uf65cfa89",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8181/api/v1/notifications",
+					"host": [
+						"localhost"
+					],
+					"port": "8181",
+					"path": [
+						"api",
+						"v1",
+						"notifications"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "notifications",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8181/api/v1/notifications",
+							"host": [
+								"localhost"
+							],
+							"port": "8181",
+							"path": [
+								"api",
+								"v1",
+								"notifications"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Date",
+							"value": "Wed, 13 Mar 2024 13:31:35 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "1533"
+						}
+					],
+					"cookie": [],
+					"body": "[\n    {\n        \"title\": \"Whispers of the Celestial Symphony: A Sci-Fi Epic\",\n        \"description\": \"Embark on a thrilling journey through the cosmos as a disparate group of explorers uncovers the secrets behind the enigmatic Celestial Symphony, a cosmic force that could reshape the fate of galaxies.\"\n    },\n    {\n        \"title\": \"Chronicles of the Enchanted Quill: Fantasy Adventures Unveiled\",\n        \"description\": \"Dive into a world of magic and wonder, where an ancient quill holds the key to unlocking portals to fantastical realms, and a group of unlikely heroes must navigate through perilous landscapes to save their world from impending doom.\"\n    },\n    {\n        \"title\": \"Beneath Neon Skies: A Cyberpunk Mystery\",\n        \"description\": \"In the neon-drenched streets of a futuristic metropolis, a lone detective must unravel a web of corruption, deceit, and high-tech intrigue, all while confronting the ghosts of a city that never sleeps.\"\n    },\n    {\n        \"title\": \"Harvest Moon Serenade: A Romantic Tale of Rural Bliss\",\n        \"description\": \"Experience the charm of a picturesque countryside as two souls find love amidst rolling fields and quaint farm life, exploring the profound beauty of nature and the enduring power of connection.\"\n    },\n    {\n        \"title\": \"Quantum Convergence: Exploring the Frontiers of Science and Reality\",\n        \"description\": \"Join a team of brilliant scientists on a groundbreaking expedition into the uncharted territories of quantum physics, where reality bends, time warps, and the very fabric of existence is questioned in a quest for knowledge that transcends the boundaries of conventional understanding.\"\n    }\n]"
+				}
+			]
+		}
+	]
+}

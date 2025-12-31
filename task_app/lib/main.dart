@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:task_app/locator.dart';
 import 'pages/home/views/home.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  initializeDependencies();
   runApp(const MyApp());
 }
 
@@ -18,4 +21,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
