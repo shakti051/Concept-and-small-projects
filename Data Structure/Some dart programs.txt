@@ -157,6 +157,40 @@ void main() {
     return lastword;
   }
 
+11. Find second largest
+
+void main() {
+  var arr = [-2, -5, -7, -3];
+  int first = -1 << 31;
+  int second = -1 << 31;
+  for (int num in arr) {
+    if (num > first) {
+      second = first;
+      first = num;
+    }else if(num>second && num!=first)
+    second=num;
+  }
+  print(second);
+}
+
+
+12. Find second smallest
+
+void main(){
+  var arr = [-2, -5, -7, -3];
+  int smallest = (1 << 31) -1;
+  int second = (1 << 31) -1;
+
+  for (var num in arr) {
+    if(num<smallest){
+      second=smallest;
+      smallest=num;
+    }else if(num<second && num!=smallest)
+    second= num;
+  }
+  print(second);
+}
+
 
 
 
