@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parallel_api/blocs/home/home_bloc.dart';
 import 'package:parallel_api/service/api_service.dart';
-
 import 'service/home_repository.dart';
 
 void main() {
