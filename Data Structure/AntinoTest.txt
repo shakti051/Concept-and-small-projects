@@ -1,4 +1,4 @@
-void main() {
+1. void main() {
   var data = 
  
 {
@@ -41,4 +41,167 @@ void main() {
 //   print(data["projects"]);
 //  data.forEach((k,v) => print("got key $k with $v"));
   data.forEach((key,value)=>print("$key : $value"));
+}
+
+2. Synoption test print all the ids.
+import 'dart:math';
+
+void main() {
+  const List<Map<String, dynamic>> testData = [
+    {
+      'id': 'test-id-1',
+
+      'name': 'test-name-1',
+
+      'type': 'test-type-1',
+
+      'group': [
+        {
+          'id': 'test-id-1-1',
+
+          'name': 'test-name-1-1',
+
+          'type': 'test-type-1-1',
+
+          'group': [
+            {
+              'id': 'test-id-1-1-1',
+
+              'name': 'test-name-1-1-1',
+
+              'type': 'test-type-1-1-1',
+
+              'group': [
+                //there can be more test objects
+              ],
+            },
+          ],
+        },
+
+        {
+          'id': 'test-id-1-2',
+
+          'name': 'test-name-1-2',
+
+          'type': 'test-type-1-2',
+
+          'group': [
+            {
+              'id': 'test-id-1-2-1',
+
+              'name': 'test-name-1-2-1',
+
+              'type': 'test-type-1-2-1',
+
+              'group': [
+                //there can be more test objects
+              ],
+            },
+          ],
+        },
+      ],
+    },
+
+    {
+      'id': 'test-id-2',
+
+      'name': 'test-name-2',
+
+      'type': 'test-type-2',
+
+      'group': [
+        {
+          'id': 'test-id-2-1',
+
+          'name': 'test-name-2-1',
+
+          'type': 'test-type-2-1',
+
+          'group': [
+            //there can be more test objects
+          ],
+        },
+
+        {
+          'id': 'test-id-2-2',
+
+          'name': 'test-name-2-2',
+
+          'type': 'test-type-2-2',
+
+          'group': [
+            {
+              'id': 'test-id-2-2-1',
+
+              'name': 'test-name-2-2-1',
+
+              'type': 'test-type-2-2-1',
+
+              'group': [
+                //there can be more test objects
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+  List<String> ids = getAllIds(testData);
+  print(ids);
+}
+
+List<String> getAllIds(List<Map<String, dynamic>> data) {
+  List<String> ids = [];
+
+  void extractIds(List<Map<String, dynamic>> items) {
+    for (var item in items) {
+      // Add current id
+      if (item['id'] != null) {
+        ids.add(item['id']);
+      }
+
+      // If group exists and is not empty → recurse
+      if (item['group'] != null && item['group'] is List) {
+        extractIds(List<Map<String, dynamic>>.from(item['group']));
+      }
+    }
+  }
+
+  extractIds(data);
+  return ids;
+}
+
+3. print all the data in logs
+
+void main() {
+ var data = {
+  "user": {
+    "id": 1,
+    "name": "Shakti",
+    "address": {
+      "street": "MG Road",
+      "city": "Bangalore",
+      "location": {
+        "lat": 12.9716,
+        "lng": 77.5946
+      }
+    },
+    "contacts": [
+      {"type": "email", "value": "shakti@mail.com"},
+      {"type": "phone", "value": "9999999999"}
+    ]
+  }
+};
+
+print(data["user"]?["id"]);
+final address = data["user"]?["address"] as Map<String,dynamic>;
+print(address["street"]);
+final location = address["location"] as Map<String,dynamic>;
+print(location["lat"]);
+final contacts = data["user"]?["contacts"] as List;
+for (var contact in contacts) {
+  print("${contact["type"]} : ${contact["value"]}");
+}
+//data.forEach((key,value)=>print("$key : $value"));
+
 }
