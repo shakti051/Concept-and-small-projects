@@ -241,3 +241,35 @@ void main() {
 }
 
 
+5. A balanced string is one in which every character in the string appears an equal number of times as every other character.
+
+bool isBalanced(String s) {
+  if (s.isEmpty) return true;
+
+  Map<String, int> freq = {};
+
+  // Count frequency of each character
+  for (int i = 0; i < s.length; i++) {
+    String ch = s[i];
+    freq[ch] = (freq[ch] ?? 0) + 1;
+  }
+
+  // Get the first frequency value
+  int expected = freq.values.first;
+
+  // Check if all frequencies match
+  for (int count in freq.values) {
+    if (count != expected) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void main() {
+  print(isBalanced("akabbk")); // true
+  print(isBalanced("abcxx"));  // false
+  print(isBalanced("Aa"));     // true (case-sensitive)
+}
+
