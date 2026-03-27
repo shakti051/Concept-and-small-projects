@@ -278,7 +278,37 @@ return result.join();
   print(rearrangeString("abcd", [0, 3, 1, 2])); // acdb
 } // 108
 
+19. Get the middle character.
+"test" --> "es"
+"testing" --> "t"
+"middle" --> "dd"
+"A" --> "A"
 
+String getMiddle(String s) {
+  final middleIndex = s.length ~/ 2;
+  return s.length.isOdd ? s[middleIndex] : s.substring(middleIndex - 1, middleIndex + 1);
+}
+
+20. find first non-repeating char.
+
+ void main() {
+  String result = firstNonRepeatingLetter("stress");   // "t"
+  print(result);
+} 
+
+String firstNonRepeatingLetter(String str){
+ Map<String,int> map = {};
+ for (var i = 0; i < str.length; i++) {
+   String ch = str[i];
+   map[ch]=(map[ch]?? 0)+1;
+ } 
+ for (var i = 0; i < str.length; i++) {
+   if(map[str[i]]==1){
+    return str[i];
+   }
+ }
+  return "";
+}
 
 
 
