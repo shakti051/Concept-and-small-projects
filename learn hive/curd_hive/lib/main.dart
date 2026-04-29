@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'model/user.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -74,6 +75,7 @@ void clearForm() {
 
     setState(() {
       editingKey = key;
+      print("editing key is  $key");
       nameCtrl.text = user.name;
       emailCtrl.text = user.email;
     });

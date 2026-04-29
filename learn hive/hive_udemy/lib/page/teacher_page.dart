@@ -26,7 +26,6 @@ class _TeacherScreenState extends State<TeacherScreen> {
       body: ValueListenableBuilder(
         valueListenable: teacherBox.listenable(), 
         builder: (context,box,child) {
-
         return ListView.builder(
           itemCount: teacherBox.length,
           itemBuilder: ((context, index) {
@@ -48,16 +47,13 @@ class _TeacherScreenState extends State<TeacherScreen> {
                       Text(student.name.toString()),
                       Text(student.age.toString()),
                       Text(student.subject.toString()),                      
-                    ],
-            
+                    ],           
                   ),
                 ),
               ),
             );
-
         }
         ),);     
-
         },
       ),       
       floatingActionButton: FloatingActionButton.extended(

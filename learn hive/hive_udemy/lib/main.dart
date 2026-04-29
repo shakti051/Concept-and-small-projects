@@ -9,42 +9,34 @@ import 'page/bank_dart.dart';
 import 'page/student_page.dart';
 import 'page/teacher_page.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+var secureStorage = const FlutterSecureStorage();
 
-const secureStorage = FlutterSecureStorage();
 
-
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Hive.initFlutter();
 
-
   String? encryptionKey = await secureStorage.read(key: 'hiveKey');
   if (encryptionKey == null) {
-    final key  = Hive.generateSecureKey();
+    final key = Hive.generateSecureKey();
     encryptionKey = base64Url.encode(key);
-    await secureStorage.write(key: 'hiveKey', value:encryptionKey);
+    await secureStorage.write(key: 'hiveKey', value: encryptionKey);
   }
-  
-  final key  = base64Url.decode(encryptionKey);
 
-
+  final key = base64Url.decode(encryptionKey);
 
   Hive.registerAdapter<Student>(StudentAdapter());
-  Hive.registerAdapter<Teacher>(TeacherAdapter());  
+  Hive.registerAdapter<Teacher>(TeacherAdapter());
   Hive.registerAdapter<Bank>(BankAdapter());
-  
-  
+
   await Hive.openBox('home');
   await Hive.openBox<Student>('students');
-  await Hive.openBox<Teacher>(
-    'teachers',
-    compactionStrategy: ((entries, deletedEntries) => deletedEntries >= 20));
+  await Hive.openBox<Teacher>('teachers',
+      compactionStrategy: ((entries, deletedEntries) => deletedEntries >= 20));
   await Hive.openBox<Bank>('banks', encryptionCipher: HiveAesCipher(key));
-
 
   runApp(const MyApp());
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -71,7 +63,6 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-
 class _MyHomePageState extends State<MyHomePage> {
   int index = 0;
   final pages = [
@@ -88,13 +79,10 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(      
-        title:const Text("Flutter Hive")
-      ),
+      appBar: AppBar(title: const Text("Flutter Hive")),
       body: pages[index],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: index,
@@ -110,22 +98,10 @@ class _MyHomePageState extends State<MyHomePage> {
           });
         },
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home'
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Student'
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Teacher'
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.money),
-            label: 'Bank'
-          )
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Student'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Teacher'),
+          BottomNavigationBarItem(icon: Icon(Icons.money), label: 'Bank')
         ],
       ),
     );

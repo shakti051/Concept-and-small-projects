@@ -21,8 +21,10 @@ class _StudentScreenState extends State<StudentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return  Scaffold(
-      body: ListView.builder(
+    return  
+    Scaffold(
+      body:   
+      ListView.builder(
         itemCount: studentBox.length,
         itemBuilder: ((context, index) {
           final student = studentBox.getAt(index) as Student;

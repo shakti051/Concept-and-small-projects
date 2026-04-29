@@ -1,4 +1,3 @@
-
 import 'package:hive/hive.dart';
 
 part 'bank.g.dart';
@@ -19,7 +18,5 @@ class Bank extends HiveObject{
     required this.name, 
     required this.accountNumber, 
     required this.amount});
-
-  
 
 }
