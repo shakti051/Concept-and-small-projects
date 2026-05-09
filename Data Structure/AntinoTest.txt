@@ -268,3 +268,786 @@ void main() {
   print(isBalanced("Aa"));     // true (case-sensitive)
 }
 
+6. Basic json parcing
+
+import 'dart:convert';
+
+void main() {
+String data = '{"name":"shakti","age":"34","city":"New Delhi"}';
+Map<String,dynamic> map = jsonDecode(data);
+//map.forEach((key,value)=>print("$key:$value"));
+//print(map["name"]);
+// print(map["age"]);
+User user = User.fromJson(map);
+print(user.name);
+print(user.age);
+}
+
+class User{
+    final String name;
+    final String age;
+    User({required this.name,required this.age});
+
+    factory User.fromJson(Map<String,dynamic> json){
+        return User(name: json['name'], age: json['age']);
+    }
+}
+
+2. parse the json
+
+import 'dart:convert';
+
+void main() {
+ var data = {
+  "user": {
+    "id": 1,
+    "name": "Shakti",
+    "address": {
+      "street": "MG Road",
+      "city": "Bangalore",
+      "location": {
+        "lat": 12.9716,
+        "lng": 77.5946
+      }
+    },
+    "contacts": [
+      {"type": "email", "value": "shakti@mail.com"},
+      {"type": "phone", "value": "9999999999"}
+    ]
+  },
+  "isActive":true
+};
+
+//data.forEach((key,value)=>print("$key:$value"));
+var user = data["user"] as Map<String,dynamic>;
+print(user["id"]);
+print(user["name"]);
+print(data["isActive"]);
+var address = user["address"] as Map<String,dynamic>;
+print(address["street"]);
+print(address["city"]);
+var location = address["location"] as Map<String,dynamic>;
+print(location["lat"]);
+print(location["lng"]);
+var contacts = user["contacts"] as List;
+for (var contact in contacts) {
+  print("${contact["type"]}: ${contact["value"]}");
+}
+// var newUser = User.fromJson(user);
+// print(newUser.address?.city ?? "not found");
+// for (var contacts in newUser.contacts ?? []) {
+//    print("${contacts.type}:${contacts.value}");     
+// }
+
+}
+
+
+class User {
+  int? id;
+  String? name;
+  Address? address;
+  List<Contacts>? contacts;
+
+  User({this.id, this.name, this.address, this.contacts});
+
+  User.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    address =
+        json['address'] != null ? new Address.fromJson(json['address']) : null;
+    if (json['contacts'] != null) {
+      contacts = <Contacts>[];
+      json['contacts'].forEach((v) {
+        contacts!.add(new Contacts.fromJson(v));
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['name'] = this.name;
+    if (this.address != null) {
+      data['address'] = this.address!.toJson();
+    }
+    if (this.contacts != null) {
+      data['contacts'] = this.contacts!.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class Address {
+  String? street;
+  String? city;
+  Location? location;
+
+  Address({this.street, this.city, this.location});
+
+  Address.fromJson(Map<String, dynamic> json) {
+    street = json['street'];
+    city = json['city'];
+    location = json['location'] != null
+        ? new Location.fromJson(json['location'])
+        : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['street'] = this.street;
+    data['city'] = this.city;
+    if (this.location != null) {
+      data['location'] = this.location!.toJson();
+    }
+    return data;
+  }
+}
+
+class Location {
+  double? lat;
+  double? lng;
+
+  Location({this.lat, this.lng});
+
+  Location.fromJson(Map<String, dynamic> json) {
+    lat = json['lat'];
+    lng = json['lng'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['lat'] = this.lat;
+    data['lng'] = this.lng;
+    return data;
+  }
+}
+
+class Contacts {
+  String? type;
+  String? value;
+
+  Contacts({this.type, this.value});
+
+  Contacts.fromJson(Map<String, dynamic> json) {
+    type = json['type'];
+    value = json['value'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['type'] = this.type;
+    data['value'] = this.value;
+    return data;
+  }
+}
+
+3. Tricky json
+
+import 'dart:convert';
+
+
+void main() {
+  var data = {
+    "status": "success",
+    "data": [
+      {
+        "type": "user",
+        "id": 1,
+        "attributes": {
+          "name": "Shakti",
+          "contact": {
+            "email": "shakti@test.com",
+            "phones": [
+              {"type": "home", "number": "12345"},
+              {"type": "work", "number": "67890"},
+            ],
+          },
+        },
+      },
+      {
+        "type": "admin",
+        "id": 2,
+        "attributes": {
+          "name": "Amit",
+          "permissions": ["read", "write"],
+          "contact": null,
+        },
+      },
+    ],
+    "included": [
+      {
+        "type": "address",
+        "id": "a1",
+        "attributes": {"city": "Delhi", "country": "India"},
+      },
+    ],
+  };
+
+  //  data.forEach((Key, value) => print("$Key:$value"));
+  // print(data["status"]);
+  // var newData = data["data"] as List;
+  // var included = data["included"] as List;
+
+  // for (var element in newData) {
+  //   print(element["type"]);
+  //   print(element["id"]);
+  //   var attributes = element["attributes"] as Map<String,dynamic>;
+  //   print("Name ${attributes["name"]}");
+  //   var contact = attributes["contact"] as Map<String,dynamic>?;
+  //   if(contact !=null){
+  //     print("Email ${contact["email"]}");
+  //     var phones = contact["phones"];
+  //     for (var phone in phones) {
+  //       print("Type ${phone["type"]}:Number ${phone["number"]}");
+  //     }
+  //   }
+  //   if(attributes.containsKey("permissions")){
+  //     print("Permissions ${attributes["permissions"]}");
+  //   }
+  // }
+
+  //   for (var element in included) {
+  //     print("Type ${element["type"]}");
+  //     print("id ${element["id"]}");
+  //     var attributes = element["attributes"] as Map<String,dynamic>?;
+  //     print("City ${attributes?["city"]}");
+  //     print("Country ${attributes?["country"]}");
+  //   }
+  var user = User.fromJson(data);
+  for (var element in user.data ?? []) {
+    print("Type: ${element.type}");
+    print("Email: ${element.attributes?.contact?.email}");
+    for (var phone in element.attributes?.contact?.phones ?? []) {
+      print("Phone Type: ${phone.type}");
+      print("Number: ${phone.number}");
+    }
+    for (var permission in element.attributes?.permissions ?? []) {
+      print(permission);
+    }
+  }
+  // for (var element in user.included ?? []) {
+  //   print("Type: ${element.type}");
+  //   print("Id: ${element.id}");
+  //   print("City ${element.attributes?.city}");
+  //   print("City ${element.attributes?.country}");
+  // }
+}
+
+class User {
+  String? status;
+  List<Data>? data;
+  List<Included>? included;
+
+  User({this.status, this.data, this.included});
+
+  User.fromJson(Map<String, dynamic> json) {
+    status = json['status'];
+    if (json['data'] != null) {
+      data = <Data>[];
+      json['data'].forEach((v) {
+        data!.add(new Data.fromJson(v));
+      });
+    }
+    if (json['included'] != null) {
+      included = <Included>[];
+      json['included'].forEach((v) {
+        included!.add(new Included.fromJson(v));
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['status'] = this.status;
+    if (this.data != null) {
+      data['data'] = this.data!.map((v) => v.toJson()).toList();
+    }
+    if (this.included != null) {
+      data['included'] = this.included!.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class Data {
+  String? type;
+  int? id;
+  Attributes? attributes;
+
+  Data({this.type, this.id, this.attributes});
+
+  Data.fromJson(Map<String, dynamic> json) {
+    type = json['type'];
+    id = json['id'];
+    attributes = json['attributes'] != null
+        ? new Attributes.fromJson(json['attributes'])
+        : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['type'] = this.type;
+    data['id'] = this.id;
+    if (this.attributes != null) {
+      data['attributes'] = this.attributes!.toJson();
+    }
+    return data;
+  }
+}
+
+class Attributes {
+  String? name;
+  Contact? contact;
+  List<String>? permissions;
+
+  Attributes({this.name, this.contact, this.permissions});
+
+  Attributes.fromJson(Map<String, dynamic> json) {
+    name = json['name'];
+
+    contact = json['contact'] != null
+        ? Contact.fromJson(json['contact'])
+        : null;
+
+    permissions = json['permissions'] != null
+        ? List<String>.from(json['permissions'])
+        : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['name'] = this.name;
+    if (this.contact != null) {
+      data['contact'] = this.contact!.toJson();
+    }
+    data['permissions'] = this.permissions;
+    return data;
+  }
+}
+
+class Contact {
+  String? email;
+  List<Phones>? phones;
+
+  Contact({this.email, this.phones});
+
+  Contact.fromJson(Map<String, dynamic> json) {
+    email = json['email'];
+    if (json['phones'] != null) {
+      phones = <Phones>[];
+      json['phones'].forEach((v) {
+        phones!.add(new Phones.fromJson(v));
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['email'] = this.email;
+    if (this.phones != null) {
+      data['phones'] = this.phones!.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class Phones {
+  String? type;
+  String? number;
+
+  Phones({this.type, this.number});
+
+  Phones.fromJson(Map<String, dynamic> json) {
+    type = json['type'];
+    number = json['number'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['type'] = this.type;
+    data['number'] = this.number;
+    return data;
+  }
+}
+
+class Included {
+  String? type;
+  String? id;
+  Attributes2? attributes;
+
+  Included({this.type, this.id, this.attributes});
+
+  Included.fromJson(Map<String, dynamic> json) {
+    type = json['type'];
+    id = json['id'];
+    attributes = json['attributes'] != null
+        ? Attributes2.fromJson(json['attributes'])
+        : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['type'] = this.type;
+    data['id'] = this.id;
+    if (this.attributes != null) {
+      data['attributes'] = this.attributes!.toJson();
+    }
+    return data;
+  }
+}
+
+class Attributes2 {
+  String? city;
+  String? country;
+
+  Attributes2({this.city, this.country});
+
+  Attributes2.fromJson(Map<String, dynamic> json) {
+    city = json['city'];
+    country = json['country'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['city'] = this.city;
+    data['country'] = this.country;
+    return data;
+  }
+}
+
+4. Same key json
+
+import 'dart:convert';
+
+void main() {
+  var data = {
+    "user": {
+      "id": 1,
+      "name": "Shakti",
+      "address": {
+        "city": "Delhi",
+        "user": {"id": 99, "name": "newUser"},
+      },
+    },
+  };
+
+  //data.forEach((key,value)=>print("$key:$value"));
+  // var user = data["user"] as Map<String,dynamic>?;
+  // print(user?["id"]);
+  // print(user?["name"]);
+  // var address = user?["address"]  as Map<String,dynamic>?;
+  // print(address?["city"]);
+  // var newUser = address?["user"] as Map<String,dynamic>?;
+  // print(newUser?["id"]);
+  // print(newUser?["name"]);
+  var newData = data["user"] as Map<String, dynamic>?;
+  var user = User.fromJson(newData ?? {});
+  print(user.id?.toString());
+  print(user.name);
+  print(user.address?.city);
+  print(user.address?.user?.id);
+  print(user.address?.user?.name);
+}
+
+class User {
+  int? id;
+  String? name;
+  Address? address;
+
+  User({this.id, this.name, this.address});
+
+  User.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    address = json['address'] != null
+        ? new Address.fromJson(json['address'])
+        : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['name'] = this.name;
+    if (this.address != null) {
+      data['address'] = this.address!.toJson();
+    }
+    return data;
+  }
+}
+
+class Address {
+  String? city;
+  User? user;
+
+  Address({this.city, this.user});
+
+  Address.fromJson(Map<String, dynamic> json) {
+    city = json['city'];
+    user = json['user'] != null ?  User.fromJson(json['user']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['city'] = this.city;
+    if (this.user != null) {
+      data['user'] = this.user!.toJson();
+    }
+    return data;
+  }
+}
+
+class NewUser {
+  int? id;
+  String? name;
+
+  NewUser({this.id, this.name});
+
+  NewUser.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['name'] = this.name;
+    return data;
+  }
+}
+
+5. Tricky Json
+
+import 'dart:convert';
+
+
+void main() {
+  var data = {
+    "status": "success",
+    "data": {
+      "users": [
+        {
+          "id": 1,
+          "name": "Shakti",
+          "roles": ["admin", "editor"],
+          "profile": {
+            "email": "shakti@test.com",
+            "address": {
+              "city": "Delhi",
+              "geo": {"lat": "28.61", "lng": "77.23"},
+            },
+          },
+        },
+        {"id": 2, "name": "Amit", "roles": [], "profile": null},
+      ],
+      "meta": {"total": 2, "page": 1},
+    },
+  };
+
+  //data.forEach((key,value)=>print("$key:$value"));
+  print("status ${data["status"]}");
+  var ourData = data["data"] as Map<String, dynamic>?;
+  // var users = ourData?["users"] as List;
+  // for (var user in users) {
+  //   print("id: ${user?["id"]}");
+  //   print("name: ${user?["name"]}");
+  //   var roles = user["roles"] as List?;
+  //   if (roles != null && roles.isNotEmpty) {
+  //     print("roles: ${roles.join(", ")}");
+  //   }
+  //   var profile = user?["profile"] as Map<String, dynamic>?;
+  //   print(profile?["email"]);
+  //   var address = profile?["address"] as Map<String, dynamic>?;
+  //   if (address != null) {
+  //     print("address ${address["city"]}");
+  //     var geo = address["geo"] as Map<String, dynamic>?;
+  //     print("Geo lat ${geo?["lat"]}");
+  //     print("Geo lug ${geo?["lng"]}");
+  //   }
+  // }
+  // var meta = ourData?["meta"] as Map<String, dynamic>?;
+  // print("total ${meta?["total"]}");
+  // print("page ${meta?["page"]}");
+  var user = User.fromJson(data);
+  for (var element in user.data?.users ?? []) {
+    print("id ${element.id}");
+    print("name ${element.name}");
+    var roles = element.roles;
+    if (roles != null && roles.isNotEmpty) {
+      print("roles ${roles.join(",")}");
+    }
+    var profile = element.profile;
+    if (profile != null) {
+      print("Email: ${profile.email}");
+      var address = profile.address;
+      print("city ${address.city}");
+      print("Geo lat ${address.geo.lat}");
+      print("Geo lat ${address.geo.lng}");
+    }
+  }
+  print("mata total${user.data?.meta?.total}");
+  print("mata page${user.data?.meta?.page}");
+}
+
+class User {
+  String? status;
+  Data? data;
+
+  User({this.status, this.data});
+
+  User.fromJson(Map<String, dynamic> json) {
+    status = json['status'];
+    data = json['data'] != null ? new Data.fromJson(json['data']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['status'] = this.status;
+    if (this.data != null) {
+      data['data'] = this.data!.toJson();
+    }
+    return data;
+  }
+}
+
+class Data {
+  List<Users>? users;
+  Meta? meta;
+
+  Data({this.users, this.meta});
+
+  Data.fromJson(Map<String, dynamic> json) {
+    if (json['users'] != null) {
+      users = <Users>[];
+      json['users'].forEach((v) {
+        users!.add(new Users.fromJson(v));
+      });
+    }
+    meta = json['meta'] != null ? new Meta.fromJson(json['meta']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    if (this.users != null) {
+      data['users'] = this.users!.map((v) => v.toJson()).toList();
+    }
+    if (this.meta != null) {
+      data['meta'] = this.meta!.toJson();
+    }
+    return data;
+  }
+}
+
+class Users {
+  int? id;
+  String? name;
+  List<String>? roles;
+  Profile? profile;
+
+  Users({this.id, this.name, this.roles, this.profile});
+
+  Users.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    roles = json['roles'].cast<String>();
+    profile = json['profile'] != null
+        ? new Profile.fromJson(json['profile'])
+        : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['name'] = this.name;
+    data['roles'] = this.roles;
+    if (this.profile != null) {
+      data['profile'] = this.profile!.toJson();
+    }
+    return data;
+  }
+}
+
+class Profile {
+  String? email;
+  Address? address;
+
+  Profile({this.email, this.address});
+
+  Profile.fromJson(Map<String, dynamic> json) {
+    email = json['email'];
+    address = json['address'] != null
+        ? new Address.fromJson(json['address'])
+        : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['email'] = this.email;
+    if (this.address != null) {
+      data['address'] = this.address!.toJson();
+    }
+    return data;
+  }
+}
+
+class Address {
+  String? city;
+  Geo? geo;
+
+  Address({this.city, this.geo});
+
+  Address.fromJson(Map<String, dynamic> json) {
+    city = json['city'];
+    geo = json['geo'] != null ? new Geo.fromJson(json['geo']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['city'] = this.city;
+    if (this.geo != null) {
+      data['geo'] = this.geo!.toJson();
+    }
+    return data;
+  }
+}
+
+class Geo {
+  String? lat;
+  String? lng;
+
+  Geo({this.lat, this.lng});
+
+  Geo.fromJson(Map<String, dynamic> json) {
+    lat = json['lat'];
+    lng = json['lng'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['lat'] = this.lat;
+    data['lng'] = this.lng;
+    return data;
+  }
+}
+
+class Meta {
+  int? total;
+  int? page;
+
+  Meta({this.total, this.page});
+
+  Meta.fromJson(Map<String, dynamic> json) {
+    total = json['total'];
+    page = json['page'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['total'] = this.total;
+    data['page'] = this.page;
+    return data;
+  }
+}
+
+
+
+

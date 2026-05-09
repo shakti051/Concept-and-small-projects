@@ -1,5 +1,3 @@
-
-import 'dart:io';
 //***Count frequency of element in a String **//
 void main() {
   String str = "Hello Wordd";
