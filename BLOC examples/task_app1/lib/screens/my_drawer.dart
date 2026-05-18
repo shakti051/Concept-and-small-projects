@@ -2,10 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_app1/blocs/blocs.dart';
 import 'package:task_app1/screens/recycle_bin.dart';
-import 'package:task_app1/screens/tasks_screen.dart';
+import 'package:task_app1/screens/tabs_screen.dart';
+import 'package:task_app1/screens/pending_screen.dart';
 
 class MyDrawer extends StatelessWidget {
   const MyDrawer({super.key});
+
+  //   const MyDrawer({super.key});
+
+  //   @override
+  //   State<MyDrawer> createState() => _MyDrawerState();
+  // }
+
+  // class _MyDrawerState extends State<MyDrawer> {
+  //  bool switchValue = false;
 
   @override
   Widget build(BuildContext context) {
@@ -26,12 +36,12 @@ class MyDrawer extends StatelessWidget {
               builder: (context, state) {
                 return GestureDetector(
                   onTap: () {
-                    Navigator.of(context).pushNamed(TasksScreen.id);
+                    Navigator.of(context).pushReplacementNamed(TabsScreen.id);
                   },
                   child: ListTile(
                     leading: Icon(Icons.folder_special),
                     title: Text("My Task"),
-                    trailing: Text("${state.allTask.length}"),
+                    trailing: Text("${state.pendingTask.length}/${state.completedTask.length}"),
                   ),
                 );
               },
@@ -41,13 +51,26 @@ class MyDrawer extends StatelessWidget {
               builder: (context, state) {
                 return GestureDetector(
                   onTap: () {
-                    Navigator.of(context).pushNamed(RecycleBin.id);
+                    Navigator.of(context).pushReplacementNamed(RecycleBin.id);
                   },
                   child: ListTile(
                     leading: Icon(Icons.delete),
                     title: Text("Bin"),
                     trailing: Text("${state.removeTask.length}"),
                   ),
+                );
+              },
+            ),
+            BlocBuilder<SwitchBloc, SwitchState>(
+              builder: (context, state) {
+                return Switch(
+                  value: state.switchValue,
+                  onChanged: (newValue) {
+                    print(newValue);
+                    newValue
+                        ? context.read<SwitchBloc>().add(SwitchOnEvent())
+                        : context.read<SwitchBloc>().add(SwitchOffEvent());
+                  },
                 );
               },
             ),

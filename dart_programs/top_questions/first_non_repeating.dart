@@ -1,10 +1,10 @@
 
  void main() {
-  String result = firstNonRepeatingLetter("stress");   // "t"
+  String? result = firstNonRepeatingLetter("stress");   // "t"
   print(result);
 } 
 
-String firstNonRepeatingLetter(String str){
+String? firstNonRepeatingLetter(String str){
  Map<String,int> map = {};
  for (var i = 0; i < str.length; i++) {
    String ch = str[i];
@@ -15,5 +15,5 @@ String firstNonRepeatingLetter(String str){
     return str[i];
    }
  }
-  return "";
+  return null;
 }

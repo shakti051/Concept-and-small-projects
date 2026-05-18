@@ -153,23 +153,19 @@ void main() {
 List<String> getAllIds(List<Map<String, dynamic>> data) {
   List<String> ids = [];
 
-  void extractIds(List<Map<String, dynamic>> items) {
-    for (var item in items) {
-      // Add current id
-      if (item['id'] != null) {
-        ids.add(item['id']);
-      }
-
-      // If group exists and is not empty → recurse
-      if (item['group'] != null && item['group'] is List) {
-        extractIds(List<Map<String, dynamic>>.from(item['group']));
-      }
+  for (var item in data) {
+    if (item["id"] != null) {
+      ids.add(item['id']);
+    }
+    if (item["group"] is List) {
+      ids.addAll(getAllIds(List<Map<String, dynamic>>.from(item['group'])));
+      ;
     }
   }
 
-  extractIds(data);
   return ids;
 }
+
 
 3. print all the data in logs
 

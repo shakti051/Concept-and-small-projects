@@ -13,6 +13,7 @@ class AddTaskScreen extends StatefulWidget {
 
 class _AddTaskScreenState extends State<AddTaskScreen> {
   final TextEditingController titleController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +23,24 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         children: [
           Text("Add Task", style: TextStyle(fontSize: 24)),
           SizedBox(height: 10),
+          Container(
+            padding: EdgeInsets.only(top: 10, bottom: 10),
+            child: TextField(
+              autofocus: true,
+              controller: titleController,
+              decoration: InputDecoration(
+                label: Text("Title"),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
           TextField(
             autofocus: true,
-            controller: titleController,
+            controller: descriptionController,
+            minLines: 3,
+            maxLines: 5,
             decoration: InputDecoration(
-              label: Text("Title"),
+              label: Text("Description"),
               border: OutlineInputBorder(),
             ),
           ),
@@ -41,6 +55,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 onPressed: () {
                   var task = Task(
                     title: titleController.text,
+                    description: descriptionController.text,
                     id: GUIDGen.generate(),
                   );
                   context.read<TasksBloc>().add(AddTask(task: task));
