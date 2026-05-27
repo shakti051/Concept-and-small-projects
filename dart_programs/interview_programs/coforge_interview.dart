@@ -1,41 +1,20 @@
+List<dynamic> moveZeros(List<dynamic> arr) {
+  int j = 0;
 
-void main() {
-  final data = {
-    "id": 1,
-    "name": "Root",
-    "children": [
-      {
-        "id": 2,
-        "name": "Group A",
-        "children": [
-          {
-            "id": 3,
-            "name": "Group A1",
-            "children": [
-              {"id": 5, "name": "Group A2", "children": []},
-            ],
-          },
-        ],
-      },
-      {"id": 4, "name": "Group B", "children": []},
-    ],
-  };
+  // Move non-zeros forward
+  for (int i = 0; i < arr.length; i++) {
+    if (arr[i] != 0) {
+      var temp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = temp;
 
-  List<Map<String, dynamic>> result = [];
-  flattenTree(data, result);
-  print(result);
+      j++;
+    }
+  }
+
+  return arr;
 }
 
-void flattenTree(
-  Map<String, dynamic> node,
-  List<Map<String, dynamic>> result,
-) {
-  result.add({
-    "id": node["id"],
-    "name": node["name"],
-  });
-
-  for (var child in node["children"]) {
-    flattenTree(child, result);
-  }
+void main() {
+  print(moveZeros([false,1,0,1,2,0,1,3,"a"]));
 }
