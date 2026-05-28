@@ -20,7 +20,6 @@ String encode(String s) {
       count = 1;
     }
   }
-
   // last block
   result.write('$count$current');
 

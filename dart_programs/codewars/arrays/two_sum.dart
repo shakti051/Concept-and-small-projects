@@ -4,7 +4,6 @@ List<int> arr = [1,3,4,6];
 int k = 9;
 var result = twoSum(arr: arr,k: k);
 print(result);
-
 }
 
 List<int> twoSum({required List<int> arr,required int k }){

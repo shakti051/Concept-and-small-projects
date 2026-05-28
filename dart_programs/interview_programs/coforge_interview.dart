@@ -1,20 +1,22 @@
-List<dynamic> moveZeros(List<dynamic> arr) {
-  int j = 0;
 
-  // Move non-zeros forward
-  for (int i = 0; i < arr.length; i++) {
-    if (arr[i] != 0) {
-      var temp = arr[i];
-      arr[i] = arr[j];
-      arr[j] = temp;
-
-      j++;
-    }
-  }
-
-  return arr;
+class Employee{
+  String name;
+  int salary;
+  Employee(this.name,this.salary);
 }
 
 void main() {
-  print(moveZeros([false,1,0,1,2,0,1,3,"a"]));
+ var data = [
+     Employee("Alice", 5000),
+     Employee("Bob", 7000),
+     Employee("Charlie", 6000),
+     Employee("David", 7000),
+     Employee("Adams", 6000),
+  ];
+
+Employee highest = data.reduce((a,b)=> a.salary > b.salary ? a : b);
+print(highest.name);
+print(highest.salary);  
 }
+
+

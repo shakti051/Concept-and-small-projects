@@ -220,6 +220,10 @@ void main() {
      Employee("Adams", 6000),
   ];
   
+Employee highest = data.reduce((a,b)=> a.salary > b.salary ? a : b);
+print(highest.name);
+print(highest.salary);  
+
   String result = "";
   int largest = -1 << 31;
   int second = -1 << 31;
