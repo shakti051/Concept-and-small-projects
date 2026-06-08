@@ -12,4 +12,19 @@ List<String> arr = ['P','Q','R','S','T','V'];
     return;
    }
  }
+
+  //  List<String> arr = ['P', 'Q', 'R', 'S', 'T', 'V'];
+  // int xor = 0;
+  // String max = arr.reduce((a, b) => a.codeUnitAt(0) > b.codeUnitAt(0) ? a : b);
+  // String min = arr.reduce((a, b) => a.codeUnitAt(0) < b.codeUnitAt(0) ? a : b);;
+
+  // for (var i = min.codeUnitAt(0); i <= max.codeUnitAt(0); i++) {
+  //   xor ^= i;
+  // }
+
+  // for (var value in arr) {
+  //   xor ^= value.codeUnitAt(0);
+  // }
+  // print(String.fromCharCode(xor));
+
 }

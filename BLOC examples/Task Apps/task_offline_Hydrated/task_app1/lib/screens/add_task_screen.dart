@@ -1,0 +1,73 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:task_app1/blocs/tasks/tasks_bloc.dart';
+import 'package:task_app1/models/task.dart';
+import 'package:task_app1/services/guid_gen.dart';
+
+class AddTaskScreen extends StatefulWidget {
+  const AddTaskScreen({super.key});
+
+  @override
+  State<AddTaskScreen> createState() => _AddTaskScreenState();
+}
+
+class _AddTaskScreenState extends State<AddTaskScreen> {
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Text("Add Task", style: TextStyle(fontSize: 24)),
+          SizedBox(height: 10),
+          Container(
+            padding: EdgeInsets.only(top: 10, bottom: 10),
+            child: TextField(
+              autofocus: true,
+              controller: titleController,
+              decoration: InputDecoration(
+                label: Text("Title"),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          TextField(
+            autofocus: true,
+            controller: descriptionController,
+            minLines: 3,
+            maxLines: 5,
+            decoration: InputDecoration(
+              label: Text("Description"),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  var task = Task(
+                    title: titleController.text,
+                    description: descriptionController.text,
+                    date: DateTime.now().toString(),  
+                    id: GUIDGen.generate(),
+                  );
+                  context.read<TasksBloc>().add(AddTask(task: task));
+                  Navigator.pop(context);
+                },
+                child: Text("Add"),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
