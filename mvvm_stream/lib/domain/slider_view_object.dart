@@ -1,5 +1,5 @@
 
-import 'model.dart';
+import 'model/model.dart';
 
 class SlideViewObject {
   SliderObject sliderObject;

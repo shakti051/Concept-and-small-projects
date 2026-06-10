@@ -7,6 +7,8 @@ import 'package:mvvm_stream/presentation/register/register.dart';
 import 'package:mvvm_stream/presentation/resources/strings_manager.dart';
 import 'package:mvvm_stream/presentation/splash/splash.dart';
 import 'package:mvvm_stream/presentation/store_details/store_details.dart';
+import '../../app/di.dart' as dependency;
+import '../../app/di.dart';
 
 class Routes {
   static const String splashRoute = "/";
@@ -24,6 +26,7 @@ class RouteGenerator {
       case Routes.splashRoute:
         return MaterialPageRoute(builder: (_) => Splash());
       case Routes.loginRoute:
+        initLoginModule();
         return MaterialPageRoute(builder: (_) => Login());
       case Routes.onBoardingRoute:
         return MaterialPageRoute(builder: (_) => Onboarding());

@@ -1,5 +1,5 @@
 import 'dart:async';
-import '../../domain/model.dart';
+import '../../domain/model/model.dart';
 import '../../domain/slider_view_object.dart';
 import '../base/baseview_model.dart';
 import '../resources/assets_manager.dart';

@@ -1,6 +1,6 @@
 import 'package:mvvm_stream/app/extensions.dart';
 import 'package:mvvm_stream/data/responses/responses.dart';
-import 'package:mvvm_stream/domain/model.dart';
+import 'package:mvvm_stream/domain/model/model.dart';
 
 const EMPTY = "";
 const ZERO = 0;
