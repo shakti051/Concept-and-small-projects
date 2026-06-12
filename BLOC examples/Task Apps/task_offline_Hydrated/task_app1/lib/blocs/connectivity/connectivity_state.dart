@@ -1,14 +1,12 @@
 part of 'connectivity_bloc.dart';
-
-sealed class ConnectivityState extends Equatable {
-  const ConnectivityState();
-  
-  @override
-  List<Object> get props => [];
+enum ConnectionStatus {
+  initial,
+  online,
+  offline,
 }
 
-final class ConnectivityInitial extends ConnectivityState {}
+class ConnectivityState {
+  final ConnectionStatus status;
 
-class ConnectivityOnline extends ConnectivityState {}
-
-class ConnectivityOffline extends ConnectivityState {}
+   ConnectivityState({this.status  = ConnectionStatus.initial});
+}

@@ -11,12 +11,12 @@ class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {
   final Connectivity connectivity;
 
   StreamSubscription? _subscription;
-  
-  ConnectivityBloc(this.connectivity) : super(ConnectivityInitial()) {
+
+  ConnectivityBloc(this.connectivity)
+    : super(ConnectivityState(status: ConnectionStatus.initial)) {
     on<ObserveConnectivity>(_onObserveConnectivity);
     on<ConnectivityChanged>(_onConnectivityChanged);
-    on<ConnectivityEvent>((event, emit) {
-    });
+    on<ConnectivityEvent>((event, emit) {});
   }
 
   Future<void> _onObserveConnectivity(
@@ -25,29 +25,25 @@ class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {
   ) async {
     final result = await connectivity.checkConnectivity();
 
-    final connected =
-        !result.contains(ConnectivityResult.none);
+    final connected = !result.contains(ConnectivityResult.none);
 
     add(ConnectivityChanged(connected));
 
-    _subscription = connectivity.onConnectivityChanged.listen(
-      (results) {
-        final connected =
-            !results.contains(ConnectivityResult.none);
+    _subscription = connectivity.onConnectivityChanged.listen((results) {
+      final connected = !results.contains(ConnectivityResult.none);
 
-        add(ConnectivityChanged(connected));
-      },
-    );
+      add(ConnectivityChanged(connected));
+    });
   }
 
-   void _onConnectivityChanged(
+  void _onConnectivityChanged(
     ConnectivityChanged event,
     Emitter<ConnectivityState> emit,
   ) {
     if (event.isConnected) {
-      emit(ConnectivityOnline());
+      emit(ConnectivityState(status: ConnectionStatus.online));
     } else {
-      emit(ConnectivityOffline());
+      emit(ConnectivityState(status: ConnectionStatus.offline));
     }
   }
 
@@ -56,5 +52,4 @@ class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {
     _subscription?.cancel();
     return super.close();
   }
-
 }
