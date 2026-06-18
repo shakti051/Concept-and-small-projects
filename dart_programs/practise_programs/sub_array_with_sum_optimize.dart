@@ -37,6 +37,7 @@ int longestSubarrayWithSumK(List<int> arr, int k) {
       }
     }
   }
+ 
   for (int i = startIndex; i <= endIndex; i++) print("${arr[i]}  num ${i + 1}");
 
   return maxLen;

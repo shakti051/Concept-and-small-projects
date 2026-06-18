@@ -24,6 +24,7 @@ void main() {
       }
     }
   }
-
+// List<int> allScores = students.expand((student)=> student["scores"] as List<int>).toList();
+// maxScore = allScores.reduce((a,b)=> a > b ? a:b);
   print(maxScore);
 }
