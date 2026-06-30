@@ -6,6 +6,7 @@ class LoginService {
 }
 
 class EmailService {
+  LoginService loginService = LoginService();
   void sendEmail() {
     print("email sent");
   }
@@ -69,19 +70,21 @@ abstract class Developer {
 abstract class Tester {
   void test();
 }
-class FlutterDeveloer implements Developer{
+
+class FlutterDeveloer implements Developer {
   @override
   void code() {
     print("Writing flutter code");
   }
 }
+
 class QATester implements Tester {
   @override
   void test() {
     print("Testing flutter app");
   }
-  
 }
+
 // DIP
 abstract class MessageService {
   void send();
@@ -94,7 +97,7 @@ class SendEmailService implements MessageService {
   }
 }
 
-class SendSmsService implements MessageService{
+class SendSmsService implements MessageService {
   @override
   void send() {
     print("SMS sent");
@@ -103,7 +106,7 @@ class SendSmsService implements MessageService{
 
 class Notification {
   final MessageService service;
-  Notification(this.service);// Dependency Injection
+  Notification(this.service); // Dependency Injection
   void notify() {
     service.send();
   }
@@ -118,6 +121,6 @@ void main() {
   printArea(Rectangle());
   FlutterDeveloer().code();
   QATester().test();
- Notification(SendEmailService()).notify();
- Notification(SendSmsService()).notify();
+  Notification(SendEmailService()).notify();
+  Notification(SendSmsService()).notify();
 }
