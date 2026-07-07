@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get_storage/get_storage.dart';
 import '../models/task.dart';
 
@@ -49,9 +50,12 @@ static Future<List<Task>> get() async {
   //Delete task
   static Future<void> delete({Task? task}) async{
     try{
+      debugPrint("Deleting document: ${task!.id}");
       final data = FirebaseFirestore.instance.collection(GetStorage().read("email"));
-      data.doc(task!.id).delete();
+     await data.doc(task.id).delete();
+     debugPrint("Delete successful"); 
     }catch(e){
+      debugPrint("Delete failed: $e");
       throw Exception(e.toString());
     }
   }

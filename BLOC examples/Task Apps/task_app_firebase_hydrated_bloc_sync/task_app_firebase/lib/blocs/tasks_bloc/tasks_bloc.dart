@@ -36,65 +36,45 @@ class TasksBloc extends HydratedBloc<TasksEvent, TasksState> {
     }
   }
 
-  void _onAddTask(
-  AddTask event,
-  Emitter<TasksState> emit,
-) async {
+  void _onAddTask(AddTask event, Emitter<TasksState> emit) async {
+    final state = this.state;
 
-  final state = this.state;
+    final updatedTasks = List<Task>.from(state.pendingTasks)..add(event.task);
 
-  final updatedTasks =
-      List<Task>.from(state.pendingTasks)
-        ..add(event.task);
+    emit(
+      TasksState(
+        pendingTasks: updatedTasks,
+        completedTasks: state.completedTasks,
+        favoriteTasks: state.favoriteTasks,
+        removedTasks: state.removedTasks,
+      ),
+    );
 
-  emit(
-    TasksState(
-      pendingTasks: updatedTasks,
-      completedTasks: state.completedTasks,
-      favoriteTasks: state.favoriteTasks,
-      removedTasks: state.removedTasks,
-    ),
-  );
+    if (connectivityBloc.state.status == ConnectionStatus.online) {
+      try {
+        final syncedTask = event.task.copyWith(syncStatus: SyncStatus.synced);
 
+        await FirestoreRepository.create(task: syncedTask);
 
-  if (connectivityBloc.state.status ==
-      ConnectionStatus.online) {
+        final syncedPendingTasks = updatedTasks.map((task) {
+          return task.id == syncedTask.id ? syncedTask : task;
+        }).toList();
 
-    try {
-      final syncedTask = event.task.copyWith(
-        syncStatus: SyncStatus.synced,
-      );
+        emit(
+          TasksState(
+            pendingTasks: syncedPendingTasks,
+            completedTasks: state.completedTasks,
+            favoriteTasks: state.favoriteTasks,
+            removedTasks: state.removedTasks,
+          ),
+        );
 
-      await FirestoreRepository.create(
-        task: syncedTask,
-      );
-
-
-      final syncedPendingTasks =
-          updatedTasks.map((task) {
-        return task.id == syncedTask.id
-            ? syncedTask
-            : task;
-      }).toList();
-
-
-      emit(
-        TasksState(
-          pendingTasks: syncedPendingTasks,
-          completedTasks: state.completedTasks,
-          favoriteTasks: state.favoriteTasks,
-          removedTasks: state.removedTasks,
-        ),
-      );
-
-      debugPrint("Task synced");
-
-    } catch (e) {
-      debugPrint("Firebase error $e");
+        debugPrint("Task synced");
+      } catch (e) {
+        debugPrint("Firebase error $e");
+      }
     }
   }
-}
-
 
   void _onGetAllTask(GetAllTsak event, Emitter<TasksState> emit) async {
     try {
@@ -133,7 +113,7 @@ class TasksBloc extends HydratedBloc<TasksEvent, TasksState> {
           pendingTasks.add(task);
         }
       }
-      
+
       emit(
         TasksState(
           pendingTasks: pendingTasks,
@@ -152,14 +132,67 @@ class TasksBloc extends HydratedBloc<TasksEvent, TasksState> {
     await FirestoreRepository.update(updatedTask);
   }
 
-  void _onDeleteTask(DeleteTask event, Emitter<TasksState> emit) async {
-    await FirestoreRepository.delete(task: event.task);
-  }
+  void _onDeleteTask(
+  DeleteTask event,
+  Emitter<TasksState> emit,
+) async {
+  final state = this.state;
 
-  void _onRemoveTask(RemoveTask event, Emitter<TasksState> emit) async {
-    Task removedTask = event.task.copyWith(isDeleted: true);
-    await FirestoreRepository.update(removedTask);
+  // Remove locally first
+  final updatedRemovedTasks = List<Task>.from(state.removedTasks)
+    ..remove(event.task);
+
+  emit(
+    TasksState(
+      pendingTasks: state.pendingTasks,
+      completedTasks: state.completedTasks,
+      favoriteTasks: state.favoriteTasks,
+      removedTasks: updatedRemovedTasks,
+    ),
+  );
+  debugPrint("Delete event received for ${event.task.id}");
+  debugPrint("Connection Status: ${connectivityBloc.state.status}",
+);
+  if (connectivityBloc.state.status == ConnectionStatus.online) {
+    try {
+      await FirestoreRepository.delete(task: event.task);
+
+      debugPrint("${event.task.title} deleted from Firebase");
+    } catch (e) {
+      debugPrint("Delete failed: $e");
+    }
   }
+}
+
+  void _onRemoveTask(
+  RemoveTask event,
+  Emitter<TasksState> emit,
+) async {
+  final removedTask = event.task.copyWith(isDeleted: true);
+
+  final updatedPendingTasks = List<Task>.from(state.pendingTasks)
+    ..remove(event.task);
+
+  final updatedRemovedTasks = List<Task>.from(state.removedTasks)
+    ..add(removedTask);
+
+  emit(
+    TasksState(
+      pendingTasks: updatedPendingTasks,
+      completedTasks: state.completedTasks,
+      favoriteTasks: state.favoriteTasks,
+      removedTasks: updatedRemovedTasks,
+    ),
+  );
+
+  if (connectivityBloc.state.status == ConnectionStatus.online) {
+    try {
+      await FirestoreRepository.update(removedTask);
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+}
 
   void _onMarkFavoriteOrUnfavoriteTask(
     MarkFavoriteOrUnfavoriteTask event,
