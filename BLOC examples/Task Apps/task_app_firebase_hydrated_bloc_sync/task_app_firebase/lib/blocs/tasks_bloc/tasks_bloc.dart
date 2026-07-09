@@ -1,14 +1,18 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:task_app_firebase/blocs/connectivity/connectivity_bloc.dart';
+import 'package:task_app_firebase/services/locator.dart';
 import '../../models/task.dart';
 import '../../respository/firestore_repository.dart';
+import '../../services/sync_service.dart';
 import '../bloc_exports.dart';
 part 'tasks_event.dart';
 part 'tasks_state.dart';
 
 class TasksBloc extends HydratedBloc<TasksEvent, TasksState> {
   ConnectivityBloc connectivityBloc;
+  final syncService = getIt.get<SyncService>();
+
   TasksBloc(this.connectivityBloc) : super(const TasksState()) {
     on<AddTask>(_onAddTask);
     on<GetAllTsak>(_onGetAllTask);
@@ -21,26 +25,36 @@ class TasksBloc extends HydratedBloc<TasksEvent, TasksState> {
     on<DeleteAllTasks>(_onDeleteAllTask);
     on<SyncPendingTasks>(_onSyncPendingTasks);
   }
-  // sync pending task
-  Future<void> _onSyncPendingTasks(
-    SyncPendingTasks event,
-    Emitter<TasksState> emit,
-  ) async {
-    for (final task in state.pendingTasks) {
-      try {
-        await FirestoreRepository.create(task: task);
-        debugPrint("Synced: ${task.title}");
-      } catch (e) {
-        debugPrint("Sync failed: $e");
-      }
-    }
-  }
+  
+
+Future<void> _onSyncPendingTasks(
+  SyncPendingTasks event,
+  Emitter<TasksState> emit,
+) async {
+
+  final updatedPendingTasks =
+      await syncService.syncPendingCreate(
+        state.pendingTasks,
+      );
+  emit(
+    TasksState(
+      pendingTasks: updatedPendingTasks,
+      completedTasks: state.completedTasks,
+      favoriteTasks: state.favoriteTasks,
+      removedTasks: state.removedTasks,
+    ),
+  );
+}
 
   void _onAddTask(AddTask event, Emitter<TasksState> emit) async {
     final state = this.state;
 
-    final updatedTasks = List<Task>.from(state.pendingTasks)..add(event.task);
+   // final updatedTasks = List<Task>.from(state.pendingTasks)..add(event.task);
+  final task = connectivityBloc.state.status == ConnectionStatus.online
+    ? event.task.copyWith(syncStatus: SyncStatus.synced)
+    : event.task.copyWith(syncStatus: SyncStatus.pendingCreate);
 
+  final updatedTasks = List<Task>.from(state.pendingTasks)..add(task);
     emit(
       TasksState(
         pendingTasks: updatedTasks,
@@ -78,9 +92,12 @@ class TasksBloc extends HydratedBloc<TasksEvent, TasksState> {
 
   void _onGetAllTask(GetAllTsak event, Emitter<TasksState> emit) async {
     try {
-      final remoteTasks = await FirestoreRepository.get();
+      List<Task> remoteTasks = [];
 
-      // Existing local tasks from HydratedBloc
+      if (connectivityBloc.state.status == ConnectionStatus.online) {
+        remoteTasks = await FirestoreRepository.get();
+      }
+
       final localTasks = [
         ...state.pendingTasks,
         ...state.completedTasks,
@@ -88,32 +105,45 @@ class TasksBloc extends HydratedBloc<TasksEvent, TasksState> {
         ...state.removedTasks,
       ];
 
-      // Merge local + Firebase tasks based on id
+      final localIds = localTasks.map((task) => task.id).toSet();
+
       final allTasks = [
         ...localTasks,
-        ...remoteTasks.where(
-          (remoteTask) =>
-              !localTasks.any((localTask) => localTask.id == remoteTask.id),
-        ),
+        ...remoteTasks.where((task) => !localIds.contains(task.id)),
       ];
 
-      List<Task> pendingTasks = [];
-      List<Task> completedTasks = [];
-      List<Task> favoriteTasks = [];
-      List<Task> removedTasks = [];
+      final pendingTasks = <Task>[];
+      final completedTasks = <Task>[];
+      final favoriteTasks = <Task>[];
+      final removedTasks = <Task>[];
 
-      for (var task in allTasks) {
-        if (task.isDeleted == true) {
+      for (final task in allTasks) {
+        if (task.isDeleted!) {
           removedTasks.add(task);
-        } else if (task.isFavorite == true) {
+        } else if (task.isFavorite!) {
           favoriteTasks.add(task);
-        } else if (task.isDone == true) {
+        } else if (task.isDone!) {
           completedTasks.add(task);
         } else {
           pendingTasks.add(task);
         }
       }
+      // for (final task in allTasks) {
+      //   debugPrint("ALL: ${task.title} ${task.id}");
+      // }
+      debugPrint("Pending: ${state.pendingTasks.length}");
+      debugPrint("Completed: ${state.completedTasks.length}");
+      debugPrint("Favorite: ${state.favoriteTasks.length}");
+      debugPrint("Removed: ${state.removedTasks.length}");
+      debugPrint("========== LOCAL ==========");
+      for (final task in localTasks) {
+        debugPrint("${task.title} -> ${task.id}");
+      }
 
+      debugPrint("========== REMOTE ==========");
+      for (final task in remoteTasks) {
+        debugPrint("${task.title} -> ${task.id}");
+      }
       emit(
         TasksState(
           pendingTasks: pendingTasks,
@@ -128,8 +158,37 @@ class TasksBloc extends HydratedBloc<TasksEvent, TasksState> {
   }
 
   void _onUpdateTask(UpdateTask event, Emitter<TasksState> emit) async {
-    Task updatedTask = event.task.copyWith(isDone: !event.task.isDone!);
-    await FirestoreRepository.update(updatedTask);
+    final state = this.state;
+
+    final pendingTasks = List<Task>.from(state.pendingTasks);
+    final completedTasks = List<Task>.from(state.completedTasks);
+
+    final updatedTask = event.task.copyWith(isDone: !event.task.isDone!);
+
+    if (!event.task.isDone!) {
+      pendingTasks.remove(event.task);
+      completedTasks.insert(0, updatedTask);
+    } else {
+      completedTasks.remove(event.task);
+      pendingTasks.insert(0, updatedTask);
+    }
+
+    emit(
+      TasksState(
+        pendingTasks: pendingTasks,
+        completedTasks: completedTasks,
+        favoriteTasks: state.favoriteTasks,
+        removedTasks: state.removedTasks,
+      ),
+    );
+
+    if (connectivityBloc.state.status == ConnectionStatus.online) {
+      try {
+        await FirestoreRepository.update(updatedTask);
+      } catch (e) {
+        debugPrint("Update task failed: $e");
+      }
+    }
   }
 
   void _onDeleteTask(DeleteTask event, Emitter<TasksState> emit) async {
@@ -192,37 +251,42 @@ class TasksBloc extends HydratedBloc<TasksEvent, TasksState> {
     Emitter<TasksState> emit,
   ) async {
     final state = this.state;
-    List<Task> pendingTasks = state.pendingTasks;
-    List<Task> completedTasks = state.completedTasks;
-    List<Task> favoriteTasks = state.favoriteTasks;
-    if (event.task.isDone == false) {
-      if (event.task.isFavorite == false) {
-        var taskIndex = pendingTasks.indexOf(event.task);
-        pendingTasks = List.from(pendingTasks)
-          ..remove(event.task)
-          ..insert(taskIndex, event.task.copyWith(isFavorite: true));
-        favoriteTasks.insert(0, event.task.copyWith(isFavorite: true));
-      } else {
-        var taskIndex = pendingTasks.indexOf(event.task);
-        pendingTasks = List.from(pendingTasks)
-          ..remove(event.task)
-          ..insert(taskIndex, event.task.copyWith(isFavorite: false));
-        favoriteTasks.remove(event.task);
+
+    final pendingTasks = List<Task>.from(state.pendingTasks);
+    final completedTasks = List<Task>.from(state.completedTasks);
+    final favoriteTasks = List<Task>.from(state.favoriteTasks);
+
+    final updatedTask = event.task.copyWith(
+      isFavorite: !event.task.isFavorite!,
+    );
+
+    // Update Pending or Completed list
+    if (!event.task.isDone!) {
+      final index = pendingTasks.indexWhere((t) => t.id == event.task.id);
+
+      if (index != -1) {
+        pendingTasks[index] = updatedTask;
       }
     } else {
-      if (event.task.isFavorite == false) {
-        var taskIndex = completedTasks.indexOf(event.task);
-        completedTasks = List.from(completedTasks)
-          ..remove(event.task)
-          ..insert(taskIndex, event.task.copyWith(isFavorite: true));
-        favoriteTasks.insert(0, event.task.copyWith(isFavorite: true));
-      } else {
-        var taskIndex = completedTasks.indexOf(event.task);
-        completedTasks = List.from(completedTasks)
-          ..remove(event.task)
-          ..insert(taskIndex, event.task.copyWith(isFavorite: false));
-        favoriteTasks.remove(event.task);
+      final index = completedTasks.indexWhere((t) => t.id == event.task.id);
+
+      if (index != -1) {
+        completedTasks[index] = updatedTask;
       }
+    }
+
+    // Update Favorite list
+    if (updatedTask.isFavorite!) {
+      // Prevent duplicate entries
+      if (!favoriteTasks.any((t) => t.id == updatedTask.id)) {
+        favoriteTasks.insert(0, updatedTask);
+      }
+    } else {
+      favoriteTasks.removeWhere((t) => t.id == updatedTask.id);
+    }
+    debugPrint("-------- Favorites --------");
+    for (final task in favoriteTasks) {
+      debugPrint("${task.title} -> ${task.id}");
     }
     emit(
       TasksState(
@@ -235,10 +299,9 @@ class TasksBloc extends HydratedBloc<TasksEvent, TasksState> {
 
     if (connectivityBloc.state.status == ConnectionStatus.online) {
       try {
-        Task task = event.task.copyWith(isFavorite: !event.task.isFavorite!);
-        await FirestoreRepository.update(task);
+        await FirestoreRepository.update(updatedTask);
       } catch (e) {
-        debugPrint(e.toString());
+        debugPrint("Favorite sync failed: $e");
       }
     }
   }

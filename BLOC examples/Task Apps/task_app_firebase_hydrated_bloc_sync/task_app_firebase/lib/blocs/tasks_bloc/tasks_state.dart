@@ -1,6 +1,8 @@
 part of 'tasks_bloc.dart';
 
+
 class TasksState extends Equatable {
+  
   final List<Task> pendingTasks;
   final List<Task> completedTasks;
   final List<Task> favoriteTasks;

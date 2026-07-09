@@ -29,9 +29,10 @@ class ConnectivityListener extends StatelessWidget {
           );
 
           // Trigger sync
-          // context.read<TasksBloc>().add(
-          //   SyncPendingTasks(),
-          // );
+          context.read<TasksBloc>().add(
+            SyncPendingTasks(),
+          );
+          
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

@@ -1,11 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum SyncStatus {
-  synced,
-  pendingCreate,
-  pendingUpdate,
-  pendingDelete,
-}
+enum SyncStatus { synced, pendingCreate, pendingUpdate, pendingDelete }
 
 // ignore: must_be_immutable
 class Task extends Equatable {
@@ -13,10 +8,12 @@ class Task extends Equatable {
   final String description;
   final String id;
   final String date;
+
   bool? isDone;
   bool? isDeleted;
   bool? isFavorite;
-  SyncStatus syncStatus;
+
+  final SyncStatus syncStatus;
 
   Task({
     required this.title,
@@ -28,9 +25,9 @@ class Task extends Equatable {
     this.isFavorite,
     this.syncStatus = SyncStatus.synced,
   }) {
-    isDone = isDone ?? false;
-    isDeleted = isDeleted ?? false;
-    isFavorite = isFavorite ?? false;
+    isDone ??= false;
+    isDeleted ??= false;
+    isFavorite ??= false;
   }
 
   Task copyWith({
@@ -74,26 +71,25 @@ class Task extends Equatable {
       description: map['description'] ?? '',
       id: map['id'] ?? '',
       date: map['date'] ?? '',
-      isDone: map['isDone'],
-      isDeleted: map['isDeleted'],
-      isFavorite: map['isFavorite'],
+      isDone: map['isDone'] ?? false,
+      isDeleted: map['isDeleted'] ?? false,
+      isFavorite: map['isFavorite'] ?? false,
       syncStatus: SyncStatus.values.firstWhere(
-      (e) => e.name == map['syncStatus'],
-      orElse: () => SyncStatus.synced,
-    ),
-  
+        (e) => e.name == (map['syncStatus'] ?? 'synced'),
+        orElse: () => SyncStatus.synced,
+      ),
     );
   }
 
   @override
   List<Object?> get props => [
-        title,
-        description,
-        id,
-        date,
-        isDone,
-        isDeleted,
-        isFavorite,
-        syncStatus,
-      ];
+    title,
+    description,
+    id,
+    date,
+    isDone,
+    isDeleted,
+    isFavorite,
+    syncStatus,
+  ];
 }

@@ -5,6 +5,7 @@ import 'package:task_app_firebase/blocs/connectivity/connectivity_bloc.dart';
 import 'package:task_app_firebase/screens/login_screen.dart';
 import 'package:task_app_firebase/screens/register_screen.dart';
 import 'package:task_app_firebase/screens/splash_screen.dart';
+import 'package:task_app_firebase/services/locator.dart';
 import 'package:task_app_firebase/widgets/connectivity_listner.dart';
 import 'blocs/bloc_exports.dart';
 import 'screens/tabs_screen.dart';
@@ -18,8 +19,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Initialize Hydrated Storage properly for all platforms
+  await setupLocator();
   final storage = await _initStorage();
   HydratedBloc.storage = storage;
+  //await HydratedBloc.storage.clear();
   runApp(MyApp(appRouter: AppRouter()));
 }
 
