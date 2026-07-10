@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -6,6 +8,7 @@ import 'package:task_app_firebase/screens/login_screen.dart';
 import 'package:task_app_firebase/screens/register_screen.dart';
 import 'package:task_app_firebase/screens/splash_screen.dart';
 import 'package:task_app_firebase/services/locator.dart';
+import 'package:task_app_firebase/services/sync_service.dart';
 import 'package:task_app_firebase/widgets/connectivity_listner.dart';
 import 'blocs/bloc_exports.dart';
 import 'screens/tabs_screen.dart';
@@ -14,6 +17,8 @@ import 'services/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:workmanager/workmanager.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,8 +28,38 @@ void main() async {
   final storage = await _initStorage();
   HydratedBloc.storage = storage;
   //await HydratedBloc.storage.clear();
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+  await Workmanager().initialize(
+    callbackDispatcher,
+  );
+
+  await Workmanager().registerPeriodicTask(
+    "taskSync",
+    "syncPendingTasks",
+    frequency: const Duration(minutes: 15),
+  );
+}
   runApp(MyApp(appRouter: AppRouter()));
 }
+
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+
+    WidgetsFlutterBinding.ensureInitialized();
+
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    await setupLocator();
+
+   // await getIt<SyncService>().syncPendingCreate();
+
+    return true;
+  });
+}
+
 
 Future<HydratedStorage> _initStorage() async {
   if (kIsWeb) {

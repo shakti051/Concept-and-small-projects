@@ -1,4 +1,3 @@
-
 import 'package:task_app_firebase/models/task.dart';
 
 import 'firestore_repository.dart';

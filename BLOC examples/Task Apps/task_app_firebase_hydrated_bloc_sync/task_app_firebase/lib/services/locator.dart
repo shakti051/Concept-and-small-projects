@@ -6,8 +6,8 @@ import 'sync_service.dart';
 final getIt = GetIt.instance;
 
 Future<void> setupLocator() async {
+  getIt.registerLazySingleton<TaskRepository>(() => TaskRepository());
   getIt.registerLazySingleton<SyncService>(
     () => SyncService(getIt<TaskRepository>()),
   );
-  getIt.registerLazySingleton<TaskRepository>(() => TaskRepository());
 }
