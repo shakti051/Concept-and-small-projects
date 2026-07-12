@@ -23,12 +23,10 @@ class _StudentScreenState extends State<StudentScreen> {
   Widget build(BuildContext context) {
     return  
     Scaffold(
-      body:   
-      ListView.builder(
+      body:ListView.builder(
         itemCount: studentBox.length,
         itemBuilder: ((context, index) {
           final student = studentBox.getAt(index) as Student;
-
           return Card(
             child: Padding(
               padding: const EdgeInsets.all(8.0),

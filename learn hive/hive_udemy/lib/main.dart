@@ -11,10 +11,10 @@ import 'page/teacher_page.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 var secureStorage = const FlutterSecureStorage();
 
-
+//dart run build_runner build --delete-conflicting-outputs
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Hive.initFlutter();
+  Hive.initFlutter('hive_db');
 
   String? encryptionKey = await secureStorage.read(key: 'hiveKey');
   if (encryptionKey == null) {
