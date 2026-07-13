@@ -1,34 +1,59 @@
 import 'package:equatable/equatable.dart';
+import 'package:hive/hive.dart';
 
-enum SyncStatus { synced, pendingCreate, pendingUpdate, pendingDelete }
+part 'task.g.dart';
 
-// ignore: must_be_immutable
+@HiveType(typeId: 0)
+enum SyncStatus {
+  @HiveField(0)
+  synced,
+
+  @HiveField(1)
+  pendingCreate,
+
+  @HiveField(2)
+  pendingUpdate,
+
+  @HiveField(3)
+  pendingDelete,
+}
+
+@HiveType(typeId: 1)
 class Task extends Equatable {
+  @HiveField(0)
   final String title;
+
+  @HiveField(1)
   final String description;
+
+  @HiveField(2)
   final String id;
+
+  @HiveField(3)
   final String date;
 
-  bool? isDone;
-  bool? isDeleted;
-  bool? isFavorite;
+  @HiveField(4)
+  final bool isDone;
 
+  @HiveField(5)
+  final bool isDeleted;
+
+  @HiveField(6)
+  final bool isFavorite;
+
+  @HiveField(7)
   final SyncStatus syncStatus;
 
-  Task({
+  const Task({
     required this.title,
     required this.description,
     required this.id,
     required this.date,
-    this.isDone,
-    this.isDeleted,
-    this.isFavorite,
+    this.isDone = false,
+    this.isDeleted = false,
+    this.isFavorite = false,
     this.syncStatus = SyncStatus.synced,
-  }) {
-    isDone ??= false;
-    isDeleted ??= false;
-    isFavorite ??= false;
-  }
+  });
 
   Task copyWith({
     String? title,
@@ -83,13 +108,13 @@ class Task extends Equatable {
 
   @override
   List<Object?> get props => [
-    title,
-    description,
-    id,
-    date,
-    isDone,
-    isDeleted,
-    isFavorite,
-    syncStatus,
-  ];
+        title,
+        description,
+        id,
+        date,
+        isDone,
+        isDeleted,
+        isFavorite,
+        syncStatus,
+      ];
 }

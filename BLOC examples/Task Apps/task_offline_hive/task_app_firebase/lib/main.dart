@@ -1,7 +1,7 @@
 import 'dart:io';
-
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:task_app_firebase/blocs/connectivity/connectivity_bloc.dart';
 import 'package:task_app_firebase/screens/login_screen.dart';
@@ -11,6 +11,7 @@ import 'package:task_app_firebase/services/locator.dart';
 import 'package:task_app_firebase/services/sync_service.dart';
 import 'package:task_app_firebase/widgets/connectivity_listner.dart';
 import 'blocs/bloc_exports.dart';
+import 'models/task.dart';
 import 'screens/tabs_screen.dart';
 import 'services/app_router.dart';
 import 'services/app_theme.dart';
@@ -19,28 +20,38 @@ import 'firebase_options.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:workmanager/workmanager.dart';
 
+//flutter pub run build_runner build --delete-conflicting-outputs
+//dart run build_runner build --delete-conflicting-outputs
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // Initialize Hydrated Storage properly for all platforms
-  await setupLocator();
-  final storage = await _initStorage();
-  HydratedBloc.storage = storage;
-  //await HydratedBloc.storage.clear();
-  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-  await Workmanager().initialize(
-    callbackDispatcher,
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  await Workmanager().registerPeriodicTask(
-    "taskSync",
-    "syncPendingTasks",
-    frequency: const Duration(minutes: 15),
-  );
-}
+  await setupLocator();
+
+  // Register Hive adapters
+  Hive.registerAdapter(SyncStatusAdapter());
+  Hive.registerAdapter(TaskAdapter());
+
+  // Open Hive boxes
+  await Hive.openBox<Task>('tasks');
+
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    await Workmanager().initialize(callbackDispatcher);
+
+    await Workmanager().registerPeriodicTask(
+      "taskSync",
+      "syncPendingTasks",
+      frequency: const Duration(minutes: 15),
+    );
+  }
+
   runApp(MyApp(appRouter: AppRouter()));
 }
+
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -58,19 +69,6 @@ void callbackDispatcher() {
 
     return true;
   });
-}
-
-
-Future<HydratedStorage> _initStorage() async {
-  if (kIsWeb) {
-    // ✅ Web uses browser storage (no path_provider)
-    return await HydratedStorage.build(
-      storageDirectory: HydratedStorage.webStorageDirectory,
-    );
-  } else {
-    final dir = await getApplicationDocumentsDirectory();
-    return await HydratedStorage.build(storageDirectory: dir);
-  }
 }
 
 class MyApp extends StatelessWidget {

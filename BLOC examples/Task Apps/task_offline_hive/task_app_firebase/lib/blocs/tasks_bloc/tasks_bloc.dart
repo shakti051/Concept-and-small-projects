@@ -9,7 +9,7 @@ import '../bloc_exports.dart';
 part 'tasks_event.dart';
 part 'tasks_state.dart';
 
-class TasksBloc extends HydratedBloc<TasksEvent, TasksState> {
+class TasksBloc extends Bloc<TasksEvent, TasksState> {
   ConnectivityBloc connectivityBloc;
   final syncService = getIt.get<SyncService>();
 
@@ -394,13 +394,4 @@ Future<void> _onSyncPendingTasks(
     }
   }
 
-  @override
-  TasksState? fromJson(Map<String, dynamic> json) {
-    return TasksState.fromMap(json);
-  }
-
-  @override
-  Map<String, dynamic>? toJson(TasksState state) {
-    return state.toMap();
-  }
 }

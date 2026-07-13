@@ -114,9 +114,9 @@
 
 // void main() {
 //   A obj = B();
-
 //   obj.show();
 // }
+
 
 // class A {
 //   int value = 10;
@@ -156,9 +156,9 @@
 // void main() {
 //   C();
 // }
-//imp child can inherit code
 
-// 
+//imp child can inherit code 
+
 
 // class A {
 //   void show() {
@@ -177,6 +177,7 @@
 // void main() {
 //   B().show();
 // }
+
 //imp
 
 // abstract class A {
@@ -204,6 +205,7 @@
 // void main() {
 //   B().show();
 // }
+
 
 // abstract class A {
 //   void show() {
@@ -256,6 +258,7 @@
 //   Dog().eat();
 //   Dog().sound();
 // }
+
 // if parent having method you don't need to override
 
 // class Animal {
@@ -296,9 +299,10 @@
 // void main() {
 //   Dog();
 // }
-
-import 'dart:async';
 //imp
+
+// import 'dart:async';
+
 // void main() async{
 //   print("A");
 
@@ -342,7 +346,7 @@ import 'dart:async';
 //   const a = {"x": 1};
 
 //   const b = {"x": 1};
-
+//   print(a == b);
 //   print(identical(a, b));
 // }
 
@@ -366,7 +370,6 @@ import 'dart:async';
 //   print("C");
 // }
 
-
 // void main() {
 //   var list = [1, 2, 3];
 
@@ -380,6 +383,7 @@ import 'dart:async';
 // }
 
 //imp
+
 // void main() {
 //   print("1");
 
@@ -421,21 +425,7 @@ import 'dart:async';
 //   Test();
 // }
 
-// class A {
-//   A() {
-//     print("A");
-//   }
-// }
-
-// class B extends A {
-//   B() : super() {
-//     print("B");
-//   }
-// }
-
-// void main() {
-//   B();
-// }
+// //}
 
 // void main() async {
 //   Stream<int> stream = Stream.fromIterable([1, 2, 3]);
@@ -458,18 +448,9 @@ import 'dart:async';
 
 //   print("4");
 // }
+
 //imp
-
-// void main() {
-//   List<int> list = [1, 2, 3];
-
-//   for (var item in list) {
-//     if (item == 2) {
-//       list.add(4);
-//     }
-//     print(item);
-//   }
-// }
+//}
 
 // void main() {
 //   List<int> list = [1, 2, 3];
@@ -483,6 +464,7 @@ import 'dart:async';
 // }
 
 //imp
+
 // void main() {
 //   var a = [1, 2];
 
@@ -580,6 +562,7 @@ import 'dart:async';
 //   obj.show();
 // }
 //imp
+
 // class Test {
 //   static int count = 0;
 
@@ -619,6 +602,7 @@ import 'dart:async';
 //   C();
 // }
 //imp
+
 // class Test {
 //   Test() {
 //     print("Default");
@@ -632,6 +616,7 @@ import 'dart:async';
 // void main() {
 //   Test.named();
 // }
+
 //imp
 
 // void main() {
@@ -707,3 +692,4 @@ import 'dart:async';
 
 //   print(a);
 // }
+
