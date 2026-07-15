@@ -11,7 +11,7 @@ class FirestoreRepository {
       await FirebaseFirestore.instance
           .collection(GetStorage().read("email"))
           .doc(task!.id)
-          .set(task.toMap());
+          .set(task.toFirestoreMap());
     } catch (e) {
       throw Exception(e.toString());
     }
@@ -41,7 +41,7 @@ static Future<List<Task>> get() async {
   static Future<void> update(Task? task) async{
     try{
       final data = FirebaseFirestore.instance.collection(GetStorage().read("email"));
-      data.doc(task!.id).update(task.toMap());
+    await  data.doc(task!.id).update(task.toFirestoreMap());
     }catch(e){
       throw Exception(e.toString());
     }

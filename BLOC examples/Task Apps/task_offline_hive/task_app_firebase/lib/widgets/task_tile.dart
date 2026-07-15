@@ -84,7 +84,7 @@ class TaskTile extends StatelessWidget {
                 onChanged: task.isDeleted == false
                     ? (value) {
                         context.read<TasksBloc>().add(UpdateTask(task: task));
-                        context.read<TasksBloc>().add(GetAllTsak());
+                  //      context.read<TasksBloc>().add(GetAllTsak());
                       }
                     : null,
               ),
@@ -95,7 +95,7 @@ class TaskTile extends StatelessWidget {
                 likeOrDislikeCallback: () =>{ context.read<TasksBloc>().add(
                   MarkFavoriteOrUnfavoriteTask(task: task),
                 ),
-                context.read<TasksBloc>().add(GetAllTsak())
+                //context.read<TasksBloc>().add(GetAllTsak())
                 },
                 editTaskCallback: () {
                   Navigator.of(context).pop();
@@ -103,7 +103,7 @@ class TaskTile extends StatelessWidget {
                 },
                 restoreTaskCallback: () => {
                   context.read<TasksBloc>().add(RestoreTask(task: task)),
-                  context.read<TasksBloc>().add(GetAllTsak()),
+                  //context.read<TasksBloc>().add(GetAllTsak()),
                 },
               ),
             ],

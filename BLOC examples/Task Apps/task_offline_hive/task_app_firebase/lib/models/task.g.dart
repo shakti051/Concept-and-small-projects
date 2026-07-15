@@ -25,13 +25,14 @@ class TaskAdapter extends TypeAdapter<Task> {
       isDeleted: fields[5] as bool,
       isFavorite: fields[6] as bool,
       syncStatus: fields[7] as SyncStatus,
+      lastModified: fields[8] as DateTime,
     );
   }
 
   @override
   void write(BinaryWriter writer, Task obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.title)
       ..writeByte(1)
@@ -47,7 +48,9 @@ class TaskAdapter extends TypeAdapter<Task> {
       ..writeByte(6)
       ..write(obj.isFavorite)
       ..writeByte(7)
-      ..write(obj.syncStatus);
+      ..write(obj.syncStatus)
+      ..writeByte(8)
+      ..write(obj.lastModified);
   }
 
   @override
@@ -75,7 +78,7 @@ class SyncStatusAdapter extends TypeAdapter<SyncStatus> {
       case 2:
         return SyncStatus.pendingUpdate;
       case 3:
-        return SyncStatus.pendingDelete;
+        return SyncStatus.pendingHardDelete;
       default:
         return SyncStatus.synced;
     }
@@ -93,7 +96,7 @@ class SyncStatusAdapter extends TypeAdapter<SyncStatus> {
       case SyncStatus.pendingUpdate:
         writer.writeByte(2);
         break;
-      case SyncStatus.pendingDelete:
+      case SyncStatus.pendingHardDelete:
         writer.writeByte(3);
         break;
     }

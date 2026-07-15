@@ -15,7 +15,7 @@ enum SyncStatus {
   pendingUpdate,
 
   @HiveField(3)
-  pendingDelete,
+  pendingHardDelete,
 }
 
 @HiveType(typeId: 1)
@@ -44,6 +44,9 @@ class Task extends Equatable {
   @HiveField(7)
   final SyncStatus syncStatus;
 
+  @HiveField(8)
+  final DateTime lastModified;
+
   const Task({
     required this.title,
     required this.description,
@@ -53,6 +56,7 @@ class Task extends Equatable {
     this.isDeleted = false,
     this.isFavorite = false,
     this.syncStatus = SyncStatus.synced,
+    required this.lastModified,
   });
 
   Task copyWith({
@@ -64,6 +68,7 @@ class Task extends Equatable {
     bool? isDeleted,
     bool? isFavorite,
     SyncStatus? syncStatus,
+    DateTime? lastModified,
   }) {
     return Task(
       title: title ?? this.title,
@@ -74,9 +79,11 @@ class Task extends Equatable {
       isDeleted: isDeleted ?? this.isDeleted,
       isFavorite: isFavorite ?? this.isFavorite,
       syncStatus: syncStatus ?? this.syncStatus,
+      lastModified: lastModified ?? this.lastModified,
     );
   }
 
+  /// Used for local storage (Hive)
   Map<String, dynamic> toMap() {
     return {
       'title': title,
@@ -87,9 +94,25 @@ class Task extends Equatable {
       'isDeleted': isDeleted,
       'isFavorite': isFavorite,
       'syncStatus': syncStatus.name,
+      'lastModified': lastModified.toIso8601String(),
     };
   }
 
+  /// Used ONLY for Firestore
+  Map<String, dynamic> toFirestoreMap() {
+    return {
+      'title': title,
+      'description': description,
+      'id': id,
+      'date': date,
+      'isDone': isDone,
+      'isDeleted': isDeleted,
+      'isFavorite': isFavorite,
+      'lastModified': lastModified.toIso8601String(),
+    };
+  }
+
+  /// Used when reading from Firestore
   factory Task.fromMap(Map<String, dynamic> map) {
     return Task(
       title: map['title'] ?? '',
@@ -99,10 +122,12 @@ class Task extends Equatable {
       isDone: map['isDone'] ?? false,
       isDeleted: map['isDeleted'] ?? false,
       isFavorite: map['isFavorite'] ?? false,
-      syncStatus: SyncStatus.values.firstWhere(
-        (e) => e.name == (map['syncStatus'] ?? 'synced'),
-        orElse: () => SyncStatus.synced,
-      ),
+      lastModified: map['lastModified'] != null
+          ? DateTime.parse(map['lastModified'])
+          : DateTime.now().toUtc(),
+
+      // Firestore data is always considered synced
+      syncStatus: SyncStatus.synced,
     );
   }
 
@@ -116,5 +141,6 @@ class Task extends Equatable {
         isDeleted,
         isFavorite,
         syncStatus,
+        lastModified,
       ];
 }

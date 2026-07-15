@@ -25,7 +25,9 @@ class _TabsScreenState extends State<TabsScreen> {
   void initState() {
     super.initState();
     context.read<TasksBloc>().add(GetAllTsak());
+     debugPrint("TabsScreen initState");
   }
+  
   var _selectedPageIndex = 0;
 
   void _addTask(BuildContext context) {

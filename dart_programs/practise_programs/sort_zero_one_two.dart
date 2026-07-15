@@ -6,20 +6,20 @@ List<int> arr = [0, 2, 1, 2, 0, 1];
   int high = arr.length -1;
   while(mid<=high){
     if(arr[mid]==0){
-      swap(arr, low, mid);
+      _swap(arr, low, mid);
       low++;
       mid++;
     }else if(arr[mid]==1){
       mid++;
     }else{
-      swap(arr, mid, high);
+      _swap(arr, mid, high);
       high--;
     }
   }
   print(arr);    
 }
 
-void swap(List<int> arr, int i, int j) {
+void _swap(List<int> arr, int i, int j) {
   int temp = arr[i];
   arr[i] = arr[j];
   arr[j] = temp;

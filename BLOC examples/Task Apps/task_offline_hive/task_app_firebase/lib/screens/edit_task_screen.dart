@@ -62,6 +62,7 @@ class EditTaskScreen extends StatelessWidget {
                   isDone: false,
                   isFavorite: oldTask.isFavorite,
                   date: DateTime.now().toString(),
+                  lastModified: DateTime.now()
                 );
                 context.read<TasksBloc>().add(EditTask(
                       oldTask: oldTask,

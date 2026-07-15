@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:task_app_firebase/blocs/connectivity/connectivity_bloc.dart';
+import 'package:task_app_firebase/constants/hive_boxes.dart';
+import 'package:task_app_firebase/respository/task_repository.dart';
 import 'package:task_app_firebase/screens/login_screen.dart';
 import 'package:task_app_firebase/screens/register_screen.dart';
 import 'package:task_app_firebase/screens/splash_screen.dart';
@@ -26,9 +28,7 @@ import 'package:workmanager/workmanager.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   await setupLocator();
 
@@ -38,7 +38,8 @@ void main() async {
 
   // Open Hive boxes
   await Hive.openBox<Task>('tasks');
-
+  // Testing only
+  //await Hive.box<Task>(HiveBoxes.tasks).clear();
   if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
     await Workmanager().initialize(callbackDispatcher);
 
@@ -52,11 +53,9 @@ void main() async {
   runApp(MyApp(appRouter: AppRouter()));
 }
 
-
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
-
     WidgetsFlutterBinding.ensureInitialized();
 
     await Firebase.initializeApp(
@@ -65,7 +64,7 @@ void callbackDispatcher() {
 
     await setupLocator();
 
-   // await getIt<SyncService>().syncPendingCreate();
+    // await getIt<SyncService>().syncPendingCreate();
 
     return true;
   });
@@ -84,7 +83,10 @@ class MyApp extends StatelessWidget {
               ConnectivityBloc(Connectivity())..add(ObserveConnectivity()),
         ),
         BlocProvider(
-          create: (context) => TasksBloc(context.read<ConnectivityBloc>()),
+          create: (context) => TasksBloc(
+            context.read<ConnectivityBloc>(),
+            getIt<TaskRepository>(),
+          ),
         ),
         BlocProvider(create: (context) => SwitchBloc()),
       ],
