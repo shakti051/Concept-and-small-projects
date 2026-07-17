@@ -1,5 +1,7 @@
+
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tdd_tutorial/core/utils/typedef.dart';
 import 'package:tdd_tutorial/src/authentication/data/models/user_model.dart';
@@ -60,5 +62,16 @@ void main() {
       expect(result, tJson);
     });
   });
-  
+
+
+  group('copyWith', () {
+    test('should return a [UserModel] with different data', () {
+      //  Arrange
+
+      // Act
+      final result = tModel.copyWith(name: 'Paul');
+
+      expect(result.name, equals('Paul'));
+    });
+  });
 }

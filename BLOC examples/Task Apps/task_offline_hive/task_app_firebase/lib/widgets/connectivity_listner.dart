@@ -6,7 +6,7 @@ import '../../blocs/connectivity/connectivity_bloc.dart';
 
 class ConnectivityListener extends StatelessWidget {
   final Widget child;
-
+    
   const ConnectivityListener({
     super.key,
     required this.child,
@@ -20,18 +20,18 @@ class ConnectivityListener extends StatelessWidget {
           previous.status != ConnectionStatus.initial,
       listener: (context, state) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-        if (state.status == ConnectionStatus.online) {
+            
+        if ( state.status == ConnectionStatus.online) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('You are online'),
             ),
           );
 
-          // Trigger sync
-          context.read<TasksBloc>().add(
-            SyncPendingTasks(),
-          );
+          //Trigger sync
+          // context.read<TasksBloc>().add(
+          //   SyncPendingTasks(),
+          // );
           
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

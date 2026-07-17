@@ -28,7 +28,10 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     on<SyncPendingTasks>(_onSyncPendingTasks);
   }
 
-  TasksState _buildState(List<Task> tasks) {
+  TasksState _buildState(
+    List<Task> tasks, {
+    SyncState syncState = SyncState.idle,
+  }) {
     final pendingTasks = <Task>[];
     final completedTasks = <Task>[];
     final favoriteTasks = <Task>[];
@@ -50,17 +53,13 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
         favoriteTasks.add(task);
       }
     }
-    debugPrint(
-      "Pending=${pendingTasks.length} "
-      "Completed=${completedTasks.length} "
-      "Favorite=${favoriteTasks.length} "
-      "Removed=${removedTasks.length}",
-    );
+
     return TasksState(
       pendingTasks: pendingTasks,
       completedTasks: completedTasks,
       favoriteTasks: favoriteTasks,
       removedTasks: removedTasks,
+      syncState: syncState,
     );
   }
 
@@ -68,25 +67,34 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     SyncPendingTasks event,
     Emitter<TasksState> emit,
   ) async {
+    emit(
+      state.copyWith(syncState: SyncState.syncing, syncMessage: "Syncing..."),
+    );
+
     try {
-      // Always read the latest local data from Hive
       final localTasks = await repository.getAll();
 
-      // Upload, download, merge
+      // Count tasks waiting for sync BEFORE syncing
+      final pendingCount = localTasks.where((task) {
+        return task.syncStatus != SyncStatus.synced;
+      }).length;
+
       final syncedTasks = await syncService.sync(localTasks);
 
-      final pendingTasks = <Task>[];
-      final completedTasks = <Task>[];
-      final favoriteTasks = <Task>[];
-      final removedTasks = <Task>[];
-      _buildState(syncedTasks);
-
-      for (final t in syncedTasks) {
-        debugPrint("EMIT -> ${t.title} ${t.syncStatus} deleted=${t.isDeleted}");
-      }
-      emit(_buildState(syncedTasks));
+      emit(
+        _buildState(syncedTasks, syncState: SyncState.synced).copyWith(
+          syncMessage: pendingCount == 0
+              ? "Everything is already up to date."
+              : "$pendingCount task${pendingCount == 1 ? '' : 's'} synchronized successfully.",
+        ),
+      );
     } catch (e) {
-      debugPrint("Sync failed: $e");
+      emit(
+        state.copyWith(
+          syncState: SyncState.failed,
+          syncMessage: "Sync failed. Will retry automatically.",
+        ),
+      );
     }
   }
 
@@ -111,7 +119,7 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
       add(SyncPendingTasks());
     }
     debugPrint(
-      "ADD -> ${task.title}  ${task.syncStatus}  ${task.lastModified.toIso8601String()}",
+      "ADD -> ${task.title}  ${task.syncStatus}  ${task.lastModified.toUtc()}",
     );
   }
 
@@ -206,6 +214,12 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
           syncStatus: SyncStatus.pendingHardDelete,
         ),
       );
+    }
+    debugPrint("Delete clicked");
+    debugPrint("Task: ${event.task.title}");
+    debugPrint("syncStatus: ${event.task.syncStatus}");
+    if (connectivityBloc.state.status == ConnectionStatus.online) {
+      add(SyncPendingTasks());
     }
   }
 

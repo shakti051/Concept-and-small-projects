@@ -1,5 +1,4 @@
 import 'package:task_app_firebase/models/task.dart';
-
 import '../data/local/hive_task_datasource.dart';
 import 'firestore_repository.dart';
 

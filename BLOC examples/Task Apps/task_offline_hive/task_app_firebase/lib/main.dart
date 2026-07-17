@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:task_app_firebase/blocs/connectivity/connectivity_bloc.dart';
 import 'package:task_app_firebase/constants/hive_boxes.dart';
@@ -12,6 +13,7 @@ import 'package:task_app_firebase/screens/splash_screen.dart';
 import 'package:task_app_firebase/services/locator.dart';
 import 'package:task_app_firebase/services/sync_service.dart';
 import 'package:task_app_firebase/widgets/connectivity_listner.dart';
+import 'package:task_app_firebase/workmanager/callback_dispatcher.dart';
 import 'blocs/bloc_exports.dart';
 import 'models/task.dart';
 import 'screens/tabs_screen.dart';
@@ -24,50 +26,78 @@ import 'package:workmanager/workmanager.dart';
 
 //flutter pub run build_runner build --delete-conflicting-outputs
 //dart run build_runner build --delete-conflicting-outputs
+//adb tcpip 5555
+//restarting in TCP mode port: 5555
+//Disconnect the USB cable.
+//adb connect 192.168.1.33:5555
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  await setupLocator();
-
-  // Register Hive adapters
-  Hive.registerAdapter(SyncStatusAdapter());
-  Hive.registerAdapter(TaskAdapter());
-
-  // Open Hive boxes
-  await Hive.openBox<Task>('tasks');
-  // Testing only
-  //await Hive.box<Task>(HiveBoxes.tasks).clear();
-  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-    await Workmanager().initialize(callbackDispatcher);
-
-    await Workmanager().registerPeriodicTask(
-      "taskSync",
-      "syncPendingTasks",
-      frequency: const Duration(minutes: 15),
-    );
-  }
-
-  runApp(MyApp(appRouter: AppRouter()));
-}
-
-@pragma('vm:entry-point')
-void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-    WidgetsFlutterBinding.ensureInitialized();
-
+  try {
+    debugPrint("1 Firebase");
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
+    debugPrint("2 Workmanager");
+
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      await Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+    }
+
+    debugPrint("3 GetIt");
     await setupLocator();
 
-    // await getIt<SyncService>().syncPendingCreate();
+    debugPrint("4 Hive");
+    await Hive.initFlutter();
+    if (!Hive.isAdapterRegistered(0)) {
+      Hive.registerAdapter(SyncStatusAdapter());
+    }
 
-    return true;
-  });
+    if (!Hive.isAdapterRegistered(1)) {
+      Hive.registerAdapter(TaskAdapter());
+    }
+    // Hive.registerAdapter(TaskAdapter());
+
+    // Hive.registerAdapter(SyncStatusAdapter());
+
+    await Hive.openBox<Task>(HiveBoxes.tasks);
+
+    debugPrint("5 Register Worker");
+
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      // await Workmanager().registerOneOffTask(
+      //   "backgroundSyncTest",
+      //   "backgroundSync",
+      //   constraints: Constraints(networkType: NetworkType.connected),
+      //   initialDelay: const Duration(seconds: 5),
+      // );
+      await Workmanager().registerPeriodicTask(
+        "backgroundSync",
+        "backgroundSync",
+        frequency: const Duration(minutes: 15),
+        constraints: Constraints(networkType: NetworkType.connected),
+      );
+    }
+    ElevatedButton(
+      onPressed: () async {
+        await Workmanager().registerOneOffTask(
+          DateTime.now().millisecondsSinceEpoch.toString(), // unique id
+          "backgroundSync",
+          constraints: Constraints(networkType: NetworkType.connected),
+        );
+        debugPrint("Worker Registered");
+      },
+      child: const Text("Run Worker"),
+    );
+
+    debugPrint("6 runApp");
+    runApp(MyApp(appRouter: AppRouter()));
+  } catch (e, stack) {
+    debugPrint(e.toString());
+    debugPrint(stack.toString());
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -93,6 +123,9 @@ class MyApp extends StatelessWidget {
       child: BlocBuilder<SwitchBloc, SwitchState>(
         builder: (context, state) {
           return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            themeAnimationDuration: const Duration(milliseconds: 400),
+            themeAnimationCurve: Curves.easeInOut,
             title: 'Flutter Tasks App',
             theme: state.switchValue
                 ? AppThemes.appThemeData[AppTheme.darkTheme]

@@ -94,7 +94,7 @@ class Task extends Equatable {
       'isDeleted': isDeleted,
       'isFavorite': isFavorite,
       'syncStatus': syncStatus.name,
-      'lastModified': lastModified.toIso8601String(),
+      'lastModified': lastModified.toUtc().toIso8601String(),
     };
   }
 
@@ -108,7 +108,8 @@ class Task extends Equatable {
       'isDone': isDone,
       'isDeleted': isDeleted,
       'isFavorite': isFavorite,
-      'lastModified': lastModified.toIso8601String(),
+      // syncStatus intentionally NOT uploaded
+      'lastModified': lastModified.toUtc().toIso8601String(),
     };
   }
 
@@ -127,20 +128,24 @@ class Task extends Equatable {
           : DateTime.now().toUtc(),
 
       // Firestore data is always considered synced
-      syncStatus: SyncStatus.synced,
+       // If it exists (local import etc.) preserve it.
+      syncStatus: SyncStatus.values.firstWhere(
+        (e) => e.name == (map['syncStatus'] ?? 'synced'),
+        orElse: () => SyncStatus.synced,
+      ),
     );
   }
 
   @override
   List<Object?> get props => [
-        title,
-        description,
-        id,
-        date,
-        isDone,
-        isDeleted,
-        isFavorite,
-        syncStatus,
-        lastModified,
-      ];
+    title,
+    description,
+    id,
+    date,
+    isDone,
+    isDeleted,
+    isFavorite,
+    syncStatus,
+    lastModified,
+  ];
 }

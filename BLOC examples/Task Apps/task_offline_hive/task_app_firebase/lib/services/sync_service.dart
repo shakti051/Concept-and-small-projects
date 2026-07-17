@@ -185,7 +185,7 @@ class SyncService {
       if (local.syncStatus != SyncStatus.synced) {
         merged[local.id] = local;
       }
-
+      
       // else: keep remote
     }
 

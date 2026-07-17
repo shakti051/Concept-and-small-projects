@@ -4,7 +4,6 @@ import 'package:get_storage/get_storage.dart';
 import '../models/task.dart';
 
 class FirestoreRepository {
-  
   //create task
   static Future<void> create({Task? task}) async {
     try {
@@ -18,56 +17,69 @@ class FirestoreRepository {
   }
 
   // get task
-static Future<List<Task>> get() async {
-  List<Task> taskList = [];
 
-  try {
-    final data = await FirebaseFirestore.instance
-        .collection(GetStorage().read("email"))
-        .get();
+  static Future<List<Task>> get() async {
+    List<Task> taskList = [];
 
-    for (var task in data.docs) {
-      taskList.add(
-        Task.fromMap(task.data()),
-      );
-    }    
-    return taskList;
-  } catch (e) {
-    throw Exception(e.toString());
+    try {
+      final email = GetStorage().read("email");
+
+      if (email == null || email.isEmpty) {
+        debugPrint("User not logged in. Skip Firestore fetch.");
+        return [];
+      }
+
+      final data = await FirebaseFirestore.instance.collection(email).get();
+
+      for (var task in data.docs) {
+        taskList.add(Task.fromMap(task.data()));
+      }
+
+      return taskList;
+    } catch (e, stack) {
+      debugPrint("Firestore get error: $e");
+      debugPrint(stack.toString());
+      throw Exception(e.toString());
+    }
   }
-}
 
   //Update task
-  static Future<void> update(Task? task) async{
-    try{
-      final data = FirebaseFirestore.instance.collection(GetStorage().read("email"));
-    await  data.doc(task!.id).update(task.toFirestoreMap());
-    }catch(e){
+  static Future<void> update(Task? task) async {
+    try {
+      final data = FirebaseFirestore.instance.collection(
+        GetStorage().read("email"),
+      );
+      await data.doc(task!.id).update(task.toFirestoreMap());
+    } catch (e) {
       throw Exception(e.toString());
     }
   }
 
   //Delete task
-  static Future<void> delete({Task? task}) async{
-    try{
+  static Future<void> delete({Task? task}) async {
+    try {
       debugPrint("Deleting document: ${task!.id}");
-      final data = FirebaseFirestore.instance.collection(GetStorage().read("email"));
-     await data.doc(task.id).delete();
-     debugPrint("Delete successful"); 
-    }catch(e){
+      final data = FirebaseFirestore.instance.collection(
+        GetStorage().read("email"),
+      );
+      await data.doc(task.id).delete();
+      debugPrint("Delete successful");
+    } catch (e) {
       debugPrint("Delete failed: $e");
       throw Exception(e.toString());
     }
   }
-  
+
   //Delete All task
-  static Future<void> deleteAllRemovedTask({List<Task>? taskList}) async{
-    try{
-      final data = FirebaseFirestore.instance.collection(GetStorage().read("email"));
-      for (var task in  taskList!) {
+  static Future<void> deleteAllRemovedTask({List<Task>? taskList}) async {
+    try {
+      final data = FirebaseFirestore.instance.collection(
+        GetStorage().read("email"),
+      );
+      for (var task in taskList!) {
         data.doc(task.id).delete();
       }
-    }catch(e){
+    } catch (e) {
       throw Exception(e.toString());
     }
   }
