@@ -1,6 +1,4 @@
-
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tdd_tutorial/core/utils/typedef.dart';
@@ -10,11 +8,10 @@ import 'package:tdd_tutorial/src/authentication/domain/entities/user.dart';
 import '../../../../fixtures/fixture_reader.dart';
 
 void main() {
-
   const tModel = UserModel.empty();
 
   test('should be a subclass of [User] entity', () {
-  //  Assert
+    // Assert
     expect(tModel, isA<User>());
   });
 
@@ -23,7 +20,7 @@ void main() {
 
   group('fromMap', () {
     test('should return a [UserModel] with the right data', () {
-    //  Act
+      // Act
       final result = UserModel.fromMap(tMap);
       expect(result, equals(tModel));
     });
@@ -31,7 +28,7 @@ void main() {
 
   group('fromJson', () {
     test('should return a [UserModel] with the right data', () {
-      //  Act
+      // Act
       final result = UserModel.fromJson(tJson);
       expect(result, equals(tModel));
     });
@@ -39,7 +36,7 @@ void main() {
 
   group('toMap', () {
     test('should return a [Map] with the right data', () {
-      //  Act
+      // Act
       final result = tModel.toMap();
 
       // Assert
@@ -48,30 +45,28 @@ void main() {
   });
 
   group('toJson', () {
-    test('should return a [JSON] with the right data', () {
-      //  Act
+    test('should return a [JSON] string with the right data', () {
+      // Act
       final result = tModel.toJson();
       final tJson = jsonEncode({
         "id": "1",
         "avatar": "_empty.avatar",
         "createdAt": "_empty.createdAt",
-        "name": "_empty.name",
+        "name": "_empty.name"
       });
-
       // Assert
       expect(result, tJson);
     });
   });
 
-
   group('copyWith', () {
-    test('should return a [UserModel] with different data', () {
-      //  Arrange
+   test('should return a [UserModel] with different data', () {
+     // Arrange
 
-      // Act
-      final result = tModel.copyWith(name: 'Paul');
+     // Act
+     final result = tModel.copyWith(name: 'Paul');
 
-      expect(result.name, equals('Paul'));
-    });
+     expect(result.name, equals('Paul'));
+   });
   });
 }

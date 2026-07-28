@@ -34,8 +34,8 @@ class UpiPayment implements Payment {
 void makePayment(Payment payment) {
   payment.pay();
 }
-//if tomorrow if new payment come like net banking
 
+//if tomorrow if new payment come like net banking
 class NetBankingPayment implements Payment {
   @override
   void pay() {

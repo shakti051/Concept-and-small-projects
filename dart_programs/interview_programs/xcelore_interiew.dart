@@ -1,4 +1,5 @@
 //***Count frequency of element in a String **//
+//
 void main() {
   String str = "Hello Wordd";
   str = str.replaceAll(" ", ""); // remove spaces

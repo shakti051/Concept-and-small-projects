@@ -6,11 +6,11 @@ void main() {
   int maxSubArrayLen = greatestSubArrayWithSum(arr, k);
   print("Max subArray with given sum: $maxSubArrayLen");
 }
-
+//
 int greatestSubArrayWithSum(List<int> arr, int k) {
   int len = 0;
   for (int i = 0; i < arr.length; i++) {
-    int sum = 0;
+    int sum = 0;//
     for (int j = i; j < arr.length; j++) {
       sum += arr[j];
       if (sum == k) {

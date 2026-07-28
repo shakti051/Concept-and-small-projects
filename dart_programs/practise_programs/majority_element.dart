@@ -4,7 +4,7 @@ void main() {
   int ans = majorityElement(arr);
   print(ans);
 }
-
+//
 int majorityElement(List<int> arr) {
   int element = 0;
   int count = 0;

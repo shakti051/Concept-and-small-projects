@@ -11,10 +11,12 @@ import 'package:task_app_firebase/screens/login_screen.dart';
 import 'package:task_app_firebase/screens/register_screen.dart';
 import 'package:task_app_firebase/screens/splash_screen.dart';
 import 'package:task_app_firebase/services/locator.dart';
+import 'package:task_app_firebase/services/sync_queue.dart';
 import 'package:task_app_firebase/services/sync_service.dart';
 import 'package:task_app_firebase/widgets/connectivity_listner.dart';
 import 'package:task_app_firebase/workmanager/callback_dispatcher.dart';
 import 'blocs/bloc_exports.dart';
+import 'core/logger/logger.dart';
 import 'models/task.dart';
 import 'screens/tabs_screen.dart';
 import 'services/app_router.dart';
@@ -80,17 +82,17 @@ void main() async {
         constraints: Constraints(networkType: NetworkType.connected),
       );
     }
-    ElevatedButton(
-      onPressed: () async {
-        await Workmanager().registerOneOffTask(
-          DateTime.now().millisecondsSinceEpoch.toString(), // unique id
-          "backgroundSync",
-          constraints: Constraints(networkType: NetworkType.connected),
-        );
-        debugPrint("Worker Registered");
-      },
-      child: const Text("Run Worker"),
-    );
+    // ElevatedButton(
+    //   onPressed: () async {
+    //     await Workmanager().registerOneOffTask(
+    //       DateTime.now().millisecondsSinceEpoch.toString(), // unique id
+    //       "backgroundSync",
+    //       constraints: Constraints(networkType: NetworkType.connected),
+    //     );
+    //     debugPrint("Worker Registered");
+    //   },
+    //   child: const Text("Run Worker"),
+    // );
 
     debugPrint("6 runApp");
     runApp(MyApp(appRouter: AppRouter()));
@@ -116,6 +118,8 @@ class MyApp extends StatelessWidget {
           create: (context) => TasksBloc(
             context.read<ConnectivityBloc>(),
             getIt<TaskRepository>(),
+            getIt<SyncQueue>(),
+            getIt<LoggerService>(),
           ),
         ),
         BlocProvider(create: (context) => SwitchBloc()),

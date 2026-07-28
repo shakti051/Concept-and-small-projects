@@ -1,11 +1,12 @@
 
-void main(){
+void main()
+{
  List<int> arr = [8, 7, 2, 5, 3, 1];
   int k = 10;
   List<int> result = pairWithSumIndices(arr, k); 
   print(result);
 }
-
+//
 List<int> pairWithSumIndices(arr, k){
  Map<int,int> map = {};
  

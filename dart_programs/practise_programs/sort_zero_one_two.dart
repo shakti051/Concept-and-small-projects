@@ -1,9 +1,11 @@
+//
 
 void main() {
 List<int> arr = [0, 2, 1, 2, 0, 1];
   int low = 0;
   int mid = 0;
   int high = arr.length -1;
+
   while(mid<=high){
     if(arr[mid]==0){
       _swap(arr, low, mid);

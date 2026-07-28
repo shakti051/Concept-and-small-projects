@@ -1,10 +1,23 @@
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:task_app_firebase/blocs/connectivity/connectivity_bloc.dart';
+import 'package:task_app_firebase/core/logger/logger.dart';
+import 'package:task_app_firebase/extensions/emitter_extension.dart';
 import 'package:task_app_firebase/services/locator.dart';
+import '../../core/exceptions/app_exceptions.dart';
+import '../../core/failures/failures.dart';
+import '../../core/utils/logger.dart';
+import '../../extensions/connectivity_bloc_extension.dart';
+import '../../extensions/emitter_extension.dart';
+import '../../extensions/sync_report_extension.dart';
+import '../../extensions/task_list_extension.dart';
+import '../../extensions/tasks_bloc_helpers.dart';
+import '../../models/sync_report.dart';
 import '../../models/task.dart';
 import '../../respository/firestore_repository.dart';
 import '../../respository/task_repository.dart';
+import '../../services/sync_queue.dart';
 import '../../services/sync_service.dart';
 import '../bloc_exports.dart';
 part 'tasks_event.dart';
@@ -12,9 +25,11 @@ part 'tasks_state.dart';
 
 class TasksBloc extends Bloc<TasksEvent, TasksState> {
   ConnectivityBloc connectivityBloc;
+  final SyncQueue syncQueue; // ✅
   final syncService = getIt.get<SyncService>();
   final TaskRepository repository;
-  TasksBloc(this.connectivityBloc, this.repository)
+   LoggerService logger  = getIt<LoggerService>();
+  TasksBloc(this.connectivityBloc, this.repository, this.syncQueue,this.logger)
     : super(const TasksState()) {
     on<AddTask>(_onAddTask);
     on<GetAllTsak>(_onGetAllTask);
@@ -25,7 +40,33 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     on<EditTask>(_onEditTask);
     on<RestoreTask>(_onRestoreTask);
     on<DeleteAllTasks>(_onDeleteAllTask);
-    on<SyncPendingTasks>(_onSyncPendingTasks);
+    on<SyncPendingTasks>(_onSyncPendingTasks, transformer: droppable());
+  }
+
+  String _buildSyncMessage(SyncReport report) {
+    final parts = <String>[];
+
+    if (report.uploaded > 0) {
+      parts.add("${report.uploaded} uploaded");
+    }
+
+    if (report.updated > 0) {
+      parts.add("${report.updated} updated");
+    }
+
+    if (report.deleted > 0) {
+      parts.add("${report.deleted} deleted");
+    }
+
+    if (parts.isEmpty) {
+      parts.add("Everything is already up to date");
+    }
+
+    if (report.failed > 0) {
+      parts.add("${report.failed} failed");
+    }
+
+    return parts.join(", ");
   }
 
   TasksState _buildState(
@@ -74,21 +115,32 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     try {
       final localTasks = await repository.getAll();
 
-      // Count tasks waiting for sync BEFORE syncing
-      final pendingCount = localTasks.where((task) {
-        return task.syncStatus != SyncStatus.synced;
-      }).length;
-
-      final syncedTasks = await syncService.sync(localTasks);
+      final report = await syncService.sync(localTasks);
 
       emit(
-        _buildState(syncedTasks, syncState: SyncState.synced).copyWith(
-          syncMessage: pendingCount == 0
-              ? "Everything is already up to date."
-              : "$pendingCount task${pendingCount == 1 ? '' : 's'} synchronized successfully.",
+        report.tasks
+            .toTasksState(
+              syncState: report.failed == 0
+                  ? SyncState.synced
+                  : SyncState.failed,
+            )
+            .copyWith(syncMessage: report.message),
+      );
+    } on AuthenticationException {
+      emit(
+        state.copyWith(
+          syncState: SyncState.failed,
+          syncMessage: "Session expired. Please login again.",
         ),
       );
-    } catch (e) {
+    } on NetworkException {
+      emit(
+        state.copyWith(
+          syncState: SyncState.failed,
+          syncMessage: "No internet connection.",
+        ),
+      );
+    } catch (_) {
       emit(
         state.copyWith(
           syncState: SyncState.failed,
@@ -99,62 +151,43 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
   }
 
   Future<void> _onAddTask(AddTask event, Emitter<TasksState> emit) async {
-    final state = this.state;
-
     final task = event.task.copyWith(syncStatus: SyncStatus.pendingCreate);
 
-    await repository.create(task);
+    try {
+      await repository.create(task);
 
-    emit(
-      TasksState(
-        pendingTasks: List<Task>.from(state.pendingTasks)..add(task),
-        completedTasks: state.completedTasks,
-        favoriteTasks: state.favoriteTasks,
-        removedTasks: state.removedTasks,
-      ),
-    );
+      final allTasks = await repository.getAll();
 
-    // If online, start sync immediately
-    if (connectivityBloc.state.status == ConnectionStatus.online) {
-      add(SyncPendingTasks());
+      emit(allTasks.toTasksState().copyWith(syncState: SyncState.idle));
+      syncIfOnline();
+      logger.info(
+        "ADD -> ${task.title} ${task.syncStatus} ${task.lastModified.toUtc()}",
+      );
+    } on LocalDatabaseException {
+      emit.emitLocalDatabaseFailure(state);
     }
-    debugPrint(
-      "ADD -> ${task.title}  ${task.syncStatus}  ${task.lastModified.toUtc()}",
-    );
   }
 
   Future<void> _onGetAllTask(GetAllTsak event, Emitter<TasksState> emit) async {
     try {
       final allTasks = await repository.getAll();
 
-      _buildState(allTasks);
-      emit(_buildState(allTasks));
-      debugPrint("===== ALL TASKS =====");
+      //emit(_buildState(allTasks));
+      //allTasks.toTasksState(syncState: SyncState.synced);
+      emitTasks(emit, allTasks, syncState: SyncState.synced);
+      logAllTasks(allTasks);
 
-      for (final task in allTasks) {
-        debugPrint(
-          "${task.title} "
-          "done=${task.isDone} "
-          "favorite=${task.isFavorite} "
-          "deleted=${task.isDeleted}",
-        );
-      }
+      syncIfOnline();
+    } on LocalDatabaseException {
+      loadTasksFailure(emit, "Unable to load local tasks.");
+    } catch (e, stack) {
+      logUnknownError(e, stack);
 
-      // Trigger background sync after local data is shown
-      if (connectivityBloc.state.status == ConnectionStatus.online) {
-        add(SyncPendingTasks());
-      }
-    } catch (e) {
-      debugPrint("Failed to load tasks: $e");
+      loadTasksFailure(emit, "Something went wrong while loading tasks.");
     }
   }
-
+  
   Future<void> _onUpdateTask(UpdateTask event, Emitter<TasksState> emit) async {
-    final state = this.state;
-
-    final pendingTasks = List<Task>.from(state.pendingTasks);
-    final completedTasks = List<Task>.from(state.completedTasks);
-
     final updatedTask = event.task.copyWith(
       isDone: !event.task.isDone,
       syncStatus: event.task.syncStatus == SyncStatus.pendingCreate
@@ -163,68 +196,51 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
       lastModified: DateTime.now().toUtc(),
     );
 
-    if (!event.task.isDone) {
-      pendingTasks.remove(event.task);
-      completedTasks.insert(0, updatedTask);
-    } else {
-      completedTasks.remove(event.task);
-      pendingTasks.insert(0, updatedTask);
-    }
+    try {
+      // Save locally
+      await repository.update(updatedTask);
 
-    await repository.update(updatedTask);
+      // Reload latest tasks from Hive
+      final allTasks = await repository.getAll();
 
-    emit(
-      TasksState(
-        pendingTasks: pendingTasks,
-        completedTasks: completedTasks,
-        favoriteTasks: state.favoriteTasks,
-        removedTasks: state.removedTasks,
-      ),
-    );
+      emit(allTasks.toTasksState());
 
-    if (connectivityBloc.state.status == ConnectionStatus.online) {
-      add(SyncPendingTasks());
+      // Sync with Firebase if online
+      syncIfOnline();
+    } on LocalDatabaseException {
+      emit.emitLocalDatabaseFailure(state);
     }
   }
 
   Future<void> _onDeleteTask(DeleteTask event, Emitter<TasksState> emit) async {
-    final state = this.state;
+    try {
+      if (event.task.syncStatus == SyncStatus.pendingCreate) {
+        // Never uploaded to Firebase
+        await repository.delete(event.task);
+      } else {
+        // Mark for background deletion
+        await repository.update(
+          event.task.copyWith(
+            isDeleted: true,
+            syncStatus: SyncStatus.pendingHardDelete,
+            lastModified: DateTime.now().toUtc(),
+          ),
+        );
+      }
 
-    final removedTasks = List<Task>.from(state.removedTasks)
-      ..removeWhere((task) => task.id == event.task.id);
+      final allTasks = await repository.getAll();
 
-    emit(
-      TasksState(
-        pendingTasks: state.pendingTasks,
-        completedTasks: state.completedTasks,
-        favoriteTasks: state.favoriteTasks,
-        removedTasks: removedTasks,
-      ),
-    );
+      emit(allTasks.toTasksState());
 
-    if (event.task.syncStatus == SyncStatus.pendingCreate) {
-      // Task never reached Firebase.
-      // Remove permanently from Hive.
-      await repository.delete(event.task);
-    } else {
-      // Keep it in Hive until background sync deletes it from Firebase.
-      await repository.update(
-        event.task.copyWith(
-          isDeleted: true,
-          syncStatus: SyncStatus.pendingHardDelete,
-        ),
-      );
-    }
-    debugPrint("Delete clicked");
-    debugPrint("Task: ${event.task.title}");
-    debugPrint("syncStatus: ${event.task.syncStatus}");
-    if (connectivityBloc.state.status == ConnectionStatus.online) {
-      add(SyncPendingTasks());
+      logTask(action: "DELETE", task: event.task);
+
+      syncIfOnline();
+    } on LocalDatabaseException {
+      emit.emitLocalDatabaseFailure(state);
     }
   }
 
   Future<void> _onRemoveTask(RemoveTask event, Emitter<TasksState> emit) async {
-    final state = this.state;
     final latestTask = [
       ...state.pendingTasks,
       ...state.completedTasks,
@@ -232,13 +248,6 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
       ...state.removedTasks,
     ].firstWhere((t) => t.id == event.task.id);
 
-    debugPrint(
-      "EVENT  -> ${event.task.syncStatus}  deleted=${event.task.isDeleted}",
-    );
-
-    debugPrint(
-      "STATE  -> ${latestTask.syncStatus}  deleted=${latestTask.isDeleted}",
-    );
     final removedTask = latestTask.copyWith(
       isDeleted: true,
       lastModified: DateTime.now().toUtc(),
@@ -247,37 +256,34 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
           : SyncStatus.pendingUpdate,
     );
 
-    final pendingTasks = List<Task>.from(state.pendingTasks)
-      ..remove(event.task);
+    try {
+      // Save locally
+      await repository.update(removedTask);
 
-    final completedTasks = List<Task>.from(state.completedTasks)
-      ..remove(event.task);
+      // Reload latest tasks from Hive
+      final allTasks = await repository.getAll();
 
-    final favoriteTasks = List<Task>.from(state.favoriteTasks)
-      ..removeWhere((task) => task.id == event.task.id);
+      emit(allTasks.toTasksState());
 
-    final removedTasks = List<Task>.from(state.removedTasks)
-      ..insert(0, removedTask);
+      logTask(action: "REMOVE", task: removedTask);
 
-    // Save locally
-    await repository.update(removedTask);
-
-    emit(
-      TasksState(
-        pendingTasks: pendingTasks,
-        completedTasks: completedTasks,
-        favoriteTasks: favoriteTasks,
-        removedTasks: removedTasks,
-      ),
-    );
-
-    // Sync immediately if online
-    if (connectivityBloc.state.status == ConnectionStatus.online) {
-      add(SyncPendingTasks());
+      syncIfOnline();
+    } on LocalDatabaseException {
+      emit.emitLocalDatabaseFailure(
+        state,
+        message: "Couldn't remove task locally.",
+      );
+    } catch (e, stack) {
+      emit.emitUnknownFailure(
+        state,
+        e,
+        stack,
+        message: "Something went wrong while removing the task.",
+      );
     }
-    debugPrint("REMOVE -> ${event.task.title} ${event.task.syncStatus}");
   }
 
+  //work from here
   Future<void> _onMarkFavoriteOrUnfavoriteTask(
     MarkFavoriteOrUnfavoriteTask event,
     Emitter<TasksState> emit,
@@ -299,13 +305,11 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     // Update Pending / Completed list
     if (!event.task.isDone) {
       final index = pendingTasks.indexWhere((t) => t.id == event.task.id);
-
       if (index != -1) {
         pendingTasks[index] = updatedTask;
       }
     } else {
       final index = completedTasks.indexWhere((t) => t.id == event.task.id);
-
       if (index != -1) {
         completedTasks[index] = updatedTask;
       }
@@ -320,35 +324,50 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
       favoriteTasks.removeWhere((t) => t.id == updatedTask.id);
     }
 
-    // Save locally
-    await repository.update(updatedTask);
+    try {
+      // Save locally
+      await repository.update(updatedTask);
 
-    emit(
-      TasksState(
-        pendingTasks: pendingTasks,
-        completedTasks: completedTasks,
-        favoriteTasks: favoriteTasks,
-        removedTasks: state.removedTasks,
-      ),
-    );
-    debugPrint("===== FAVORITE EVENT =====");
-    debugPrint(
-      "EVENT -> "
-      "done=${event.task.isDone} "
-      "favorite=${event.task.isFavorite}",
-    );
+      emit(
+        state.copyWith(
+          pendingTasks: pendingTasks,
+          completedTasks: completedTasks,
+          favoriteTasks: favoriteTasks,
+        ),
+      );
 
-    final hiveTask = (await repository.getAll()).firstWhere(
-      (t) => t.id == event.task.id,
-    );
+      if (connectivityBloc.state.status == ConnectionStatus.online) {
+        add(SyncPendingTasks());
+      }
 
-    debugPrint(
-      "HIVE  -> "
-      "done=${hiveTask.isDone} "
-      "favorite=${hiveTask.isFavorite}",
-    );
-    if (connectivityBloc.state.status == ConnectionStatus.online) {
-      add(SyncPendingTasks());
+      debugPrint("===== FAVORITE EVENT =====");
+      debugPrint(
+        "EVENT -> done=${event.task.isDone} favorite=${event.task.isFavorite}",
+      );
+
+      final hiveTask = (await repository.getAll()).firstWhere(
+        (t) => t.id == event.task.id,
+      );
+
+      debugPrint(
+        "HIVE -> done=${hiveTask.isDone} favorite=${hiveTask.isFavorite}",
+      );
+    } on LocalDatabaseException {
+      emit(
+        state.copyWith(
+          syncState: SyncState.failed,
+          syncMessage: "Couldn't update task locally.",
+        ),
+      );
+    } catch (e) {
+      debugPrint(e.toString());
+
+      emit(
+        state.copyWith(
+          syncState: SyncState.failed,
+          syncMessage: "Something went wrong.",
+        ),
+      );
     }
   }
 
@@ -363,7 +382,7 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
       syncStatus: event.oldTask.syncStatus == SyncStatus.pendingCreate
           ? SyncStatus.pendingCreate
           : SyncStatus.pendingUpdate,
-      lastModified: DateTime.now(),
+      lastModified: DateTime.now().toUtc(),
     );
 
     // Update Pending list
@@ -390,19 +409,32 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
       favoriteTasks[favoriteIndex] = updatedTask;
     }
 
-    // Save in Hive
-    await repository.update(updatedTask);
+    try {
+      // Save locally
+      await repository.update(updatedTask);
 
-    emit(
-      TasksState(
-        pendingTasks: pendingTasks,
-        completedTasks: completedTasks,
-        favoriteTasks: favoriteTasks,
-        removedTasks: state.removedTasks,
-      ),
-    );
-    if (connectivityBloc.state.status == ConnectionStatus.online) {
-      add(SyncPendingTasks());
+      emit(
+        state.copyWith(
+          pendingTasks: pendingTasks,
+          completedTasks: completedTasks,
+          favoriteTasks: favoriteTasks,
+          syncMessage: "Task updated.",
+        ),
+      );
+
+      // Sync immediately if online
+      if (connectivityBloc.state.status == ConnectionStatus.online) {
+        add(SyncPendingTasks());
+      }
+    } on LocalDatabaseFailure catch (e) {
+      emit(state.copyWith(syncState: SyncState.failed, syncMessage: e.message));
+    } catch (e) {
+      emit(
+        state.copyWith(
+          syncState: SyncState.failed,
+          syncMessage: "Failed to update task.",
+        ),
+      );
     }
   }
 
@@ -417,6 +449,7 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
       isDone: false,
       isFavorite: false,
       date: DateTime.now().toIso8601String(),
+      lastModified: DateTime.now().toUtc(),
       syncStatus: event.task.syncStatus == SyncStatus.pendingCreate
           ? SyncStatus.pendingCreate
           : SyncStatus.pendingUpdate,
@@ -428,19 +461,27 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     final pendingTasks = List<Task>.from(state.pendingTasks)
       ..insert(0, restoredTask);
 
-    // Save locally
-    await repository.update(restoredTask);
+    try {
+      // Save locally
+      await repository.update(restoredTask);
 
-    emit(
-      TasksState(
-        pendingTasks: pendingTasks,
-        completedTasks: state.completedTasks,
-        favoriteTasks: state.favoriteTasks,
-        removedTasks: removedTasks,
-      ),
-    );
-    if (connectivityBloc.state.status == ConnectionStatus.online) {
-      add(SyncPendingTasks());
+      emit(
+        state.copyWith(pendingTasks: pendingTasks, removedTasks: removedTasks),
+      );
+
+      // Sync immediately if online
+      if (connectivityBloc.state.status == ConnectionStatus.online) {
+        add(SyncPendingTasks());
+      }
+    } on LocalDatabaseFailure catch (e) {
+      emit(state.copyWith(syncState: SyncState.failed, syncMessage: e.message));
+    } catch (e) {
+      emit(
+        state.copyWith(
+          syncState: SyncState.failed,
+          syncMessage: "Failed to restore task.",
+        ),
+      );
     }
   }
 
@@ -452,32 +493,38 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
 
     final tasksToDelete = List<Task>.from(state.removedTasks);
 
-    // Remove Bin from UI immediately
-    emit(
-      TasksState(
-        pendingTasks: state.pendingTasks,
-        completedTasks: state.completedTasks,
-        favoriteTasks: state.favoriteTasks,
-        removedTasks: const [],
-      ),
-    );
+    try {
+      // Remove Bin immediately
+      emit(state.copyWith(removedTasks: const []));
 
-    for (final task in tasksToDelete) {
-      if (task.syncStatus == SyncStatus.pendingCreate) {
-        // Never uploaded → delete locally
-        await repository.delete(task);
-      } else {
-        // Already exists on server → mark for deletion
-        await repository.update(
-          task.copyWith(
-            isDeleted: true,
-            syncStatus: SyncStatus.pendingHardDelete,
-          ),
-        );
+      for (final task in tasksToDelete) {
+        if (task.syncStatus == SyncStatus.pendingCreate) {
+          // Never uploaded -> remove permanently
+          await repository.delete(task);
+        } else {
+          // Already uploaded -> mark for background delete
+          await repository.update(
+            task.copyWith(
+              isDeleted: true,
+              syncStatus: SyncStatus.pendingHardDelete,
+              lastModified: DateTime.now().toUtc(),
+            ),
+          );
+        }
       }
-    }
-    if (connectivityBloc.state.status == ConnectionStatus.online) {
-      add(SyncPendingTasks());
+
+      if (connectivityBloc.state.status == ConnectionStatus.online) {
+        add(SyncPendingTasks());
+      }
+    } on LocalDatabaseFailure catch (e) {
+      emit(state.copyWith(syncState: SyncState.failed, syncMessage: e.message));
+    } catch (_) {
+      emit(
+        state.copyWith(
+          syncState: SyncState.failed,
+          syncMessage: "Failed to delete all tasks.",
+        ),
+      );
     }
   }
 }

@@ -1,15 +1,13 @@
 import 'package:dartz/dartz.dart';
+import 'package:tdd_tutorial/core/errors/exceptions.dart';
+import 'package:tdd_tutorial/core/errors/failure.dart';
 import 'package:tdd_tutorial/core/utils/typedef.dart';
 import 'package:tdd_tutorial/src/authentication/data/datasources/authentication_remote_data_source.dart';
 import 'package:tdd_tutorial/src/authentication/domain/entities/user.dart';
 import 'package:tdd_tutorial/src/authentication/domain/repositories/authentication_repository.dart';
 
-import '../../../../core/error/exceptions.dart';
-import '../../../../core/error/failure.dart';
-
 class AuthenticationRepositoryImplementation
-  implements AuthenticationRepository {
-
+    implements AuthenticationRepository {
   const AuthenticationRepositoryImplementation(this._remoteDataSource);
 
   final AuthenticationRemoteDataSource _remoteDataSource;
@@ -18,7 +16,7 @@ class AuthenticationRepositoryImplementation
   ResultVoid createUser({
     required String createdAt,
     required String name,
-    required String avatar
+    required String avatar,
   }) async {
     // Test-Driven Development
     // call the remote data source
@@ -27,11 +25,11 @@ class AuthenticationRepositoryImplementation
     // // check if when the remoteDataSource throws an exception, we return a
     // failure
     try {
-      await _remoteDataSource.createUser(createdAt: createdAt, name: name,
-          avatar: avatar);
+      await _remoteDataSource.createUser(
+          createdAt: createdAt, name: name, avatar: avatar);
       return const Right(null);
-    } on APIException catch(e) {
-      return Left(ApiFailure.fromException(e));
+    } on APIException catch (e) {
+      return Left(APIFailure.fromException(e));
     }
   }
 
@@ -41,7 +39,7 @@ class AuthenticationRepositoryImplementation
       final result = await _remoteDataSource.getUsers();
       return Right(result);
     } on APIException catch (e) {
-      return Left(ApiFailure.fromException(e));
+      return Left(APIFailure.fromException(e));
     }
   }
 }

@@ -5,7 +5,7 @@ void main() {
   int cnt = findAllSubarraysWithGivenSum(arr, k);
   print("The number of subarrays is: $cnt");
 }
-
+//
 int findAllSubarraysWithGivenSum(List<int> arr, int k) {
   int count = 0;
   Map<int, int> prefixSumCount = {0: 1};

@@ -1,11 +1,11 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
+import 'package:tdd_tutorial/core/errors/exceptions.dart';
 import 'package:tdd_tutorial/core/utils/constants.dart';
+import 'package:tdd_tutorial/core/utils/typedef.dart';
 import 'package:tdd_tutorial/src/authentication/data/models/user_model.dart';
 import 'package:http/http.dart' as http;
-
-import '../../../../core/error/exceptions.dart';
-import '../../../../core/utils/typedef.dart';
 
 abstract class AuthenticationRemoteDataSource {
   Future<void> createUser({
@@ -18,7 +18,7 @@ abstract class AuthenticationRemoteDataSource {
 }
 
 const kCreateUserEndpoint = '/test-api/users';
-const kGetUsersEndpoint = '/test-api/user';
+const kGetUsersEndpoint = '/test-api/users';
 
 class AuthRemoteDataSrcImpl implements AuthenticationRemoteDataSource {
   const AuthRemoteDataSrcImpl(this._client);
@@ -31,27 +31,30 @@ class AuthRemoteDataSrcImpl implements AuthenticationRemoteDataSource {
     required String name,
     required String avatar,
   }) async {
-  //  1. check to make sure that it returns the right data when the status
-  //  code is 200 or the proper response code
-  //  2. check to make sure that it "THROWS A CUSTOM EXCEPTION" with the
-  //  right message when status code is the bad one
+    // 1. check to make sure that it returns the right data when the status
+    // code is 200 or the proper response code
+    // 2. check to make sure that it "THROWS A CUSTOM EXCEPTION" with the
+    // right message when status code is the bad one
     try {
       final response = await _client.post(
         Uri.https(kBaseUrl, kCreateUserEndpoint),
         body: jsonEncode({
-          'createdAt': 'createdAt',
-          'name': 'name',
-          'avatar': 'avatar',
+          'createdAt': createdAt,
+          'name': name,
         }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
       );
-      if(response.statusCode != 200 && response.statusCode != 201) {
-        throw APIException(message: response.body,
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw APIException(
+          message: response.body,
           statusCode: response.statusCode,
         );
       }
     } on APIException {
       rethrow;
-    } catch(e) {
+    } catch (e) {
       throw APIException(message: e.toString(), statusCode: 505);
     }
   }
@@ -60,9 +63,9 @@ class AuthRemoteDataSrcImpl implements AuthenticationRemoteDataSource {
   Future<List<UserModel>> getUsers() async {
     try {
       final response = await _client.get(
-        Uri.http(kBaseUrl, kGetUsersEndpoint),
+        Uri.https(kBaseUrl, kGetUsersEndpoint),
       );
-      if(response.statusCode != 200) {
+      if (response.statusCode != 200) {
         throw APIException(
           message: response.body,
           statusCode: response.statusCode,
@@ -73,7 +76,7 @@ class AuthRemoteDataSrcImpl implements AuthenticationRemoteDataSource {
           .toList();
     } on APIException {
       rethrow;
-    } catch(e) {
+    } catch (e) {
       throw APIException(message: e.toString(), statusCode: 505);
     }
   }

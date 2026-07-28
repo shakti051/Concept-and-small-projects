@@ -7,14 +7,13 @@ void main(){
   for (var i = 0; i < arr.length-1; i++) {
     if(i%2==0){
       if(arr[i]<arr[i+1]){
-        swap(arr, i, i+1);
+       // _swap(arr, i, i+1);
       }
     }else{
       if(arr[i]>arr[i+1]){
-        swap(arr, i, i+1);
+       // swap(arr, i, i+1);
       }
     }
   }
 print(arr);
 }
-

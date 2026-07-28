@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import '../core/exceptions/app_exceptions.dart';
+import '../models/sync_report.dart';
 import '../models/task.dart';
 import '../respository/task_repository.dart';
 
@@ -7,46 +9,56 @@ class SyncService {
 
   SyncService(this.repository);
 
-  Future<List<Task>> sync(List<Task> localTasks) async {
-    var updatedTasks = List<Task>.from(localTasks);
+  Future<SyncReport> sync(List<Task> localTasks) async {
+    try {
+      final report = SyncReport();
 
-    // 1. Upload new tasks
-    updatedTasks = await _syncPendingCreate(updatedTasks);
+      var updatedTasks = List<Task>.from(localTasks);
 
-    // 2. Upload updated tasks
-    updatedTasks = await _syncPendingUpdate(updatedTasks);
+      // CREATE
+      updatedTasks = await _syncPendingCreate(updatedTasks, report);
 
-    // 3. Upload deleted tasks
-    updatedTasks = await _syncPendingDelete(updatedTasks);
-    debugPrint("===== LOCAL BEFORE MERGE =====");
-    for (final t in updatedTasks) {
-      debugPrint("${t.title} ${t.syncStatus}");
+      // UPDATE
+      updatedTasks = await _syncPendingUpdate(updatedTasks, report);
+
+      // DELETE
+      updatedTasks = await _syncPendingDelete(updatedTasks, report);
+
+      debugPrint("===== LOCAL BEFORE MERGE =====");
+      for (final task in updatedTasks) {
+        debugPrint("${task.title} ${task.syncStatus}");
+      }
+
+      final remoteTasks = await repository.getRemoteAll();
+
+      debugPrint("===== REMOTE BEFORE MERGE =====");
+      for (final task in remoteTasks) {
+        debugPrint("${task.title} ${task.syncStatus}");
+      }
+
+      updatedTasks = _mergeTasks(
+        localTasks: updatedTasks,
+        remoteTasks: remoteTasks,
+      );
+
+      await repository.upsertAll(updatedTasks);
+
+      report.tasks = updatedTasks;
+
+      return report;
+    } on AuthenticationException {
+      rethrow;
     }
-    // 4. Download everything from Firebase
-    final remoteTasks = await repository.getRemoteAll();
-
-    debugPrint("===== REMOTE BEFORE MERGE =====");
-    for (final t in remoteTasks) {
-      debugPrint("${t.title} ${t.syncStatus}");
-    }
-
-    // 5. Merge local and remote
-    updatedTasks = _mergeTasks(
-      localTasks: updatedTasks,
-      remoteTasks: remoteTasks,
-    );
-
-    // Save merged result to Hive
-    await repository.upsertAll(updatedTasks);
-
-    return updatedTasks;
   }
 
   //===========================================================
   // CREATE
   //===========================================================
 
-  Future<List<Task>> _syncPendingCreate(List<Task> tasks) async {
+  Future<List<Task>> _syncPendingCreate(
+    List<Task> tasks,
+    SyncReport report,
+  ) async {
     final updatedTasks = List<Task>.from(tasks);
 
     for (int i = 0; i < updatedTasks.length; i++) {
@@ -56,7 +68,7 @@ class SyncService {
         continue;
       }
 
-      // Already deleted locally
+      // Skip if already deleted locally
       if (task.isDeleted) {
         debugPrint("${task.title} skipped because deleted");
         continue;
@@ -66,7 +78,6 @@ class SyncService {
         debugPrint("Uploading ${task.title}");
 
         await repository.createRemote(task);
-        debugPrint("Uploaded ${task.title}");
 
         final syncedTask = task.copyWith(syncStatus: SyncStatus.synced);
 
@@ -74,9 +85,25 @@ class SyncService {
 
         // Update Hive
         await repository.update(syncedTask);
-        debugPrint("Saved synced status for ${task.title}");
+
+        report.uploaded++;
+
+        debugPrint("${task.title} uploaded successfully");
+      } on NetworkException {
+        report.failed++;
+        debugPrint("No internet while syncing ${task.title}");
+        continue;
+      } on FirestoreWriteException {
+        report.failed++;
+        debugPrint("Firestore write failed for ${task.title}");
+        continue;
+      } on AuthenticationException {
+        debugPrint("Authentication failed");
+        rethrow;
       } catch (e) {
-        debugPrint("Create sync failed (${task.id}): $e");
+        report.failed++;
+        debugPrint("Unexpected error while uploading ${task.title}: $e");
+        continue;
       }
     }
 
@@ -87,14 +114,18 @@ class SyncService {
   // UPDATE
   //===========================================================
 
-  Future<List<Task>> _syncPendingUpdate(List<Task> tasks) async {
-    debugPrint("Sync Pending Update Started");
+  Future<List<Task>> _syncPendingUpdate(
+    List<Task> tasks,
+    SyncReport report,
+  ) async {
+    debugPrint("===== Sync Pending Update Started =====");
 
     for (final task in tasks) {
       debugPrint(
         "${task.title} -> ${task.syncStatus} -> deleted=${task.isDeleted}",
       );
     }
+
     final updatedTasks = List<Task>.from(tasks);
 
     for (int i = 0; i < updatedTasks.length; i++) {
@@ -105,21 +136,35 @@ class SyncService {
       }
 
       try {
-        debugPrint("Uploading:");
-        debugPrint(task.toMap().toString());
+        debugPrint("Updating ${task.title}");
 
         await repository.updateRemote(task);
 
-        debugPrint("Upload finished");
         final syncedTask = task.copyWith(syncStatus: SyncStatus.synced);
 
         updatedTasks[i] = syncedTask;
 
+        // Update local Hive
         await repository.update(syncedTask);
 
-        debugPrint("${task.title} updated");
+        report.updated++;
+
+        debugPrint("${task.title} updated successfully");
+      } on NetworkException {
+        report.failed++;
+        debugPrint("No internet while updating ${task.title}");
+        continue;
+      } on FirestoreWriteException {
+        report.failed++;
+        debugPrint("Firestore update failed for ${task.title}");
+        continue;
+      } on AuthenticationException {
+        debugPrint("Authentication failed");
+        rethrow;
       } catch (e) {
-        debugPrint("Update sync failed (${task.id}): $e");
+        report.failed++;
+        debugPrint("Unexpected error while updating ${task.title}: $e");
+        continue;
       }
     }
 
@@ -130,7 +175,10 @@ class SyncService {
   // DELETE
   //===========================================================
 
-  Future<List<Task>> _syncPendingDelete(List<Task> tasks) async {
+  Future<List<Task>> _syncPendingDelete(
+    List<Task> tasks,
+    SyncReport report,
+  ) async {
     final updatedTasks = List<Task>.from(tasks);
 
     for (int i = updatedTasks.length - 1; i >= 0; i--) {
@@ -141,15 +189,35 @@ class SyncService {
       }
 
       try {
+        debugPrint("Deleting ${task.title}");
+
+        // Delete from Firestore
         await repository.deleteRemote(task);
 
+        // Delete from Hive
         await repository.delete(task);
 
+        // Remove from local list
         updatedTasks.removeAt(i);
 
-        debugPrint("${task.title} deleted");
+        report.deleted++;
+
+        debugPrint("${task.title} deleted successfully");
+      } on NetworkException {
+        report.failed++;
+        debugPrint("No internet while deleting ${task.title}");
+        continue;
+      } on FirestoreWriteException {
+        report.failed++;
+        debugPrint("Firestore delete failed for ${task.title}");
+        continue;
+      } on AuthenticationException {
+        debugPrint("Authentication failed");
+        rethrow;
       } catch (e) {
-        debugPrint("Delete sync failed (${task.id}): $e");
+        report.failed++;
+        debugPrint("Unexpected error while deleting ${task.title}: $e");
+        continue;
       }
     }
 
@@ -185,7 +253,7 @@ class SyncService {
       if (local.syncStatus != SyncStatus.synced) {
         merged[local.id] = local;
       }
-      
+
       // else: keep remote
     }
 

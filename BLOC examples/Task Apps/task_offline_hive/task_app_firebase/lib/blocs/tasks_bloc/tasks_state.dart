@@ -1,15 +1,41 @@
 part of 'tasks_bloc.dart';
 
-enum SyncState { idle, syncing, synced, failed }
+/// Transient sync status shown in the UI while [SyncPendingTasks] runs.
+enum SyncState {
+  /// No sync in progress; default resting state.
+  idle,
 
+  /// Sync is currently running ([SyncPendingTasks] handler active).
+  syncing,
+
+  /// Last sync finished successfully.
+  synced,
+
+  /// Last sync threw an error; local data is still intact.
+  failed,
+}
+
+/// Snapshot of all task lists plus optional sync feedback for the UI.
+///
+/// Task lists are derived from the flat Hive collection and split into
+/// separate buckets so each screen can listen to the slice it needs.
 class TasksState extends Equatable {
+  /// Active tasks that are not done and not deleted.
   final List<Task> pendingTasks;
+
+  /// Tasks marked as done (`isDone: true`) and not deleted.
   final List<Task> completedTasks;
+
+  /// Subset of tasks flagged as favorite; may overlap pending/completed lists.
   final List<Task> favoriteTasks;
+
+  /// Soft-deleted tasks shown in the recycle bin (`isDeleted: true`).
   final List<Task> removedTasks;
 
   /// UI state only (DO NOT persist)
   final SyncState syncState;
+
+  /// Human-readable sync result, e.g. "Syncing..." or success/error message.
   final String? syncMessage;
    const TasksState({
     this.pendingTasks = const <Task>[],

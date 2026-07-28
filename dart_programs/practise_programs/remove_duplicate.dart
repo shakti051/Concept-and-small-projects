@@ -18,3 +18,4 @@ int removeDuplicate(List<int> arr){
   }
  return i+1;
 } 
+

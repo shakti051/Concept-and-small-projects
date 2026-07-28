@@ -1,17 +1,18 @@
-enum SyncResult { synced, skipped, failed }
+import 'package:task_app_firebase/models/task.dart';
 
 class SyncReport {
+  List<Task> tasks;
+
   int uploaded;
   int updated;
   int deleted;
-  int skipped;
   int failed;
 
   SyncReport({
+    this.tasks = const [],
     this.uploaded = 0,
     this.updated = 0,
     this.deleted = 0,
-    this.skipped = 0,
     this.failed = 0,
   });
 

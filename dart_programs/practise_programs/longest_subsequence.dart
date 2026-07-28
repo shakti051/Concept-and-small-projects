@@ -5,11 +5,12 @@ void main() {
   int ans = longestSuccessiveElements(arr);
   print("The longest sequence $ans");
 }
-
+//
 int longestSuccessiveElements(List<int> arr) {
   int longest = 0;
   Set<int> integerSet = <int>{};
   for (int num in arr) integerSet.add(num);
+
   for (int num in integerSet) {
     if (!integerSet.contains(num - 1)) {
       int x = num;

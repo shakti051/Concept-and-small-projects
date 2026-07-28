@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tdd_tutorial/src/authentication/domain/entities/user.dart';
 import 'package:tdd_tutorial/src/authentication/domain/repositories/authentication_repository.dart';
-import 'package:tdd_tutorial/src/authentication/domain/usecases/get_user.dart';
-import 'authentication_repository.mock.dart';
+import 'package:tdd_tutorial/src/authentication/domain/usecases/get_users.dart';
 
+import 'authentication_repository.mock.dart';
 
 void main() {
   late AuthenticationRepository repository;
@@ -17,15 +17,16 @@ void main() {
   });
 
   const tResponse = [User.empty()];
+
   test(
-    'should call the [AuthRepo.getUsers] and return [List<User>]',
-        () async {
+    'should call [AuthRepo.getUsers] and return [List<User>]',
+    () async {
       // Arrange
       when(() => repository.getUsers()).thenAnswer(
-              (_) async => const Right(tResponse),
+        (_) async => const Right(tResponse),
       );
 
-      //  Act
+      // Act
       final result = await usecase();
 
       expect(result, equals(const Right<dynamic, List<User>>(tResponse)));

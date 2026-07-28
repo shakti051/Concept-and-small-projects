@@ -13,16 +13,15 @@ void main() {
  
   var priceMap = {};
   for (var item in prices) {
-    priceMap[item["id"]]=item["price"];
-  
+    priceMap[item["id"]]=item["price"];  
   }
+  
   print(priceMap);
  final merged = products.map((product){
   return{
     ...product,"price":priceMap[product["id"]]
   };
  }).toList();
-
 
   print(merged);
 }
