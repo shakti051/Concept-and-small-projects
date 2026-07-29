@@ -28,9 +28,9 @@ extension TaskBlocHelpers on TasksBloc {
     SyncState syncState = SyncState.idle,
     String? syncMessage,
   }) {
+    tasks.sortByLastModified();
     emit(
       tasks
-          .sortByLastModified()
           .toTasksState(syncState: syncState)
           .copyWith(syncMessage: syncMessage),
     );

@@ -1,11 +1,13 @@
 import '../blocs/tasks_bloc/tasks_bloc.dart';
 import '../models/task.dart';
+import 'task_sorting.dart';
 
 extension TaskListExtension on List<Task> {
   
   TasksState toTasksState({
     SyncState syncState = SyncState.idle,
   }) {
+    sortByLastModified();
     final pendingTasks = <Task>[];
     final completedTasks = <Task>[];
     final favoriteTasks = <Task>[];

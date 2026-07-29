@@ -62,7 +62,6 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     return super.close();
   }
 
-
   Future<void> _onSyncPendingTasks(
     SyncPendingTasks event,
     Emitter<TasksState> emit,
@@ -76,7 +75,10 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
 
       // Sync succeeded -> reset retry attempts
       retryScheduler.reset();
-
+      debugPrint("===== AFTER SYNC =====");
+      for (final t in report.tasks) {
+        debugPrint("${t.title} | ${t.lastModified}");
+      }
       emitTasks(
         emit,
         report.tasks,
@@ -120,12 +122,6 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
       emit((await repository.getAll()).toTasksState());
 
       scheduleSync();
-
-      logger.info(
-        "ADD -> ${task.title} "
-        "${task.syncStatus} "
-        "${task.lastModified.toUtc()}",
-      );
     } on LocalDatabaseException {
       emit.emitLocalDatabaseFailure(state);
     }
@@ -134,7 +130,10 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
   Future<void> _onGetAllTask(GetAllTsak event, Emitter<TasksState> emit) async {
     try {
       final allTasks = await repository.getAll();
-
+      debugPrint("===== AFTER ADD =====");
+      for (final t in allTasks) {
+        debugPrint("${t.title} | ${t.lastModified}");
+      }
       emitTasks(emit, allTasks, syncState: SyncState.synced);
 
       logAllTasks(allTasks);
