@@ -37,11 +37,15 @@ class TasksState extends Equatable {
 
   /// Human-readable sync result, e.g. "Syncing..." or success/error message.
   final String? syncMessage;
+
+  final Set<String> syncingTaskIds;
+
    const TasksState({
     this.pendingTasks = const <Task>[],
     this.completedTasks = const <Task>[],
     this.favoriteTasks = const <Task>[],
     this.removedTasks = const <Task>[],
+    this.syncingTaskIds = const {},
     this.syncState = SyncState.idle,
     this.syncMessage
   });
@@ -53,6 +57,7 @@ class TasksState extends Equatable {
     List<Task>? removedTasks,
     SyncState? syncState,
      String? syncMessage,
+     Set<String>? syncingTaskIds
   }) {
     return TasksState(
       pendingTasks: pendingTasks ?? this.pendingTasks,
@@ -60,7 +65,8 @@ class TasksState extends Equatable {
       favoriteTasks: favoriteTasks ?? this.favoriteTasks,
       removedTasks: removedTasks ?? this.removedTasks,
       syncState: syncState ?? this.syncState,
-      syncMessage: syncMessage ?? this.syncMessage
+      syncMessage: syncMessage ?? this.syncMessage,
+      syncingTaskIds: syncingTaskIds ?? this.syncingTaskIds
     );
   }
 
@@ -71,7 +77,8 @@ class TasksState extends Equatable {
     favoriteTasks,
     removedTasks,
     syncState,
-    syncMessage ?? ""
+    syncMessage ?? "",
+    syncingTaskIds
   ];
 
    /// Persist ONLY business data.

@@ -5,6 +5,7 @@ import '../blocs/tasks_bloc/tasks_bloc.dart';
 import '../models/task.dart';
 import 'connectivity_bloc_extension.dart';
 import 'task_list_extension.dart';
+import 'task_sorting.dart';
 
 extension TaskBlocHelpers on TasksBloc {
   void syncIfOnline() {
@@ -15,12 +16,24 @@ extension TaskBlocHelpers on TasksBloc {
     });
   }
 
+  void scheduleSync() {
+    syncScheduler.schedule(() {
+      syncIfOnline();
+    });
+  }
+
   void emitTasks(
     Emitter<TasksState> emit,
     List<Task> tasks, {
     SyncState syncState = SyncState.idle,
+    String? syncMessage,
   }) {
-    emit(tasks.toTasksState(syncState: syncState));
+    emit(
+      tasks
+          .sortByLastModified()
+          .toTasksState(syncState: syncState)
+          .copyWith(syncMessage: syncMessage),
+    );
   }
 
   void logAllTasks(List<Task> tasks) {
@@ -43,5 +56,9 @@ extension TaskBlocHelpers on TasksBloc {
   void logUnknownError(Object error, StackTrace stack) {
     debugPrint(error.toString());
     debugPrintStack(stackTrace: stack);
+  }
+
+  Future<void> emitLatestTasks(Emitter<TasksState> emit) async {
+    emit((await repository.getAll()).toTasksState());
   }
 }

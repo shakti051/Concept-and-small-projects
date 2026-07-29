@@ -239,24 +239,32 @@ class SyncService {
       merged[remote.id] = remote;
     }
 
-    // Decide for every local task
+    // Merge local tasks
     for (final local in localTasks) {
       final remote = merged[local.id];
 
-      // Remote doesn't exist
+      // Doesn't exist remotely
       if (remote == null) {
         merged[local.id] = local;
         continue;
       }
 
-      // Local has unsynced changes → local wins
+      // Local has pending changes
       if (local.syncStatus != SyncStatus.synced) {
-        merged[local.id] = local;
+        // Keep whichever version is newer
+        merged[local.id] = local.lastModified.isAfter(remote.lastModified)
+            ? local
+            : remote;
+        continue;
       }
 
-      // else: keep remote
+      // Both are synced → newest wins
+      merged[local.id] = local.lastModified.isAfter(remote.lastModified)
+          ? local
+          : remote;
     }
 
-    return merged.values.toList();
+    return merged.values.toList()
+      ..sort((a, b) => b.lastModified.compareTo(a.lastModified));
   }
 }

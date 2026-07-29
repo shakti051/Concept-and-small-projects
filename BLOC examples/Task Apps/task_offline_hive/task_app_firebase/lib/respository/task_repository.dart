@@ -2,6 +2,7 @@ import 'package:task_app_firebase/models/task.dart';
 import '../data/local/hive_task_datasource.dart';
 import 'firestore_repository.dart';
 
+
 class TaskRepository {
   final HiveTaskDataSource hive;
 
@@ -45,5 +46,17 @@ class TaskRepository {
 
   Future<List<Task>> getRemoteAll() async {
     return FirestoreRepository.get();
+  }//
+   // New batch methods
+  Future<void> createAll(List<Task> tasks){
+   return  hive.createAll(tasks);
+  }
+
+  Future<void> updateAll(List<Task> tasks){
+    return hive.updateAll(tasks);
+  }
+
+  Future<void> deleteAll(List<Task> tasks){
+    return hive.deleteAll(tasks);; 
   }
 }

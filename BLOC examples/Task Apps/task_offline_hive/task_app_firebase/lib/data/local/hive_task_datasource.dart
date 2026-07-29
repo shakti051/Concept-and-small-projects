@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:task_app_firebase/constants/hive_boxes.dart';
+import 'package:task_app_firebase/extensions/task_sorting.dart';
 import 'package:task_app_firebase/models/task.dart';
 
 import '../../core/exceptions/app_exceptions.dart';
@@ -12,7 +13,7 @@ class HiveTaskDataSource {
   Future<void> addTask(Task task) async {
     try {
       await _box.put(task.id, task);
-    } catch (_)  {
+    } catch (_) {
       throw LocalDatabaseException();
     }
   }
@@ -34,12 +35,29 @@ class HiveTaskDataSource {
   }
 
   List<Task> getAllTasks() {
-    return _box.values.toList();
+    final tasks = _box.values.toList();
+    tasks.sortByLastModified();
+    return tasks;
   }
 
   Future<void> upsertAll(List<Task> tasks) async {
     final Map<String, Task> map = {for (final task in tasks) task.id: task};
 
     await _box.putAll(map);
+  }
+
+  @override
+  Future<void> createAll(List<Task> tasks) async {
+    await _box.putAll({for (final task in tasks) task.id: task});
+  }
+
+  @override
+  Future<void> updateAll(List<Task> tasks) async {
+    await _box.putAll({for (final task in tasks) task.id: task});
+  }
+
+  @override
+  Future<void> deleteAll(List<Task> tasks) async {
+    await _box.deleteAll(tasks.map((e) => e.id).toList());
   }
 }

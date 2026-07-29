@@ -11,7 +11,9 @@ import 'package:task_app_firebase/screens/login_screen.dart';
 import 'package:task_app_firebase/screens/register_screen.dart';
 import 'package:task_app_firebase/screens/splash_screen.dart';
 import 'package:task_app_firebase/services/locator.dart';
+import 'package:task_app_firebase/services/retry_scheduler.dart';
 import 'package:task_app_firebase/services/sync_queue.dart';
+import 'package:task_app_firebase/services/sync_schedular.dart';
 import 'package:task_app_firebase/services/sync_service.dart';
 import 'package:task_app_firebase/widgets/connectivity_listner.dart';
 import 'package:task_app_firebase/workmanager/callback_dispatcher.dart';
@@ -32,6 +34,7 @@ import 'package:workmanager/workmanager.dart';
 //restarting in TCP mode port: 5555
 //Disconnect the USB cable.
 //adb connect 192.168.1.33:5555
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -120,6 +123,8 @@ class MyApp extends StatelessWidget {
             getIt<TaskRepository>(),
             getIt<SyncQueue>(),
             getIt<LoggerService>(),
+            getIt<SyncScheduler>(),
+            getIt<RetryScheduler>()
           ),
         ),
         BlocProvider(create: (context) => SwitchBloc()),

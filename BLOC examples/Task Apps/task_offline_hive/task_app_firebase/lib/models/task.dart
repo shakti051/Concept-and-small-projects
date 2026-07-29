@@ -16,6 +16,7 @@ enum SyncStatus {
 
   @HiveField(3)
   pendingHardDelete,
+  
 }
 
 @HiveType(typeId: 1)
