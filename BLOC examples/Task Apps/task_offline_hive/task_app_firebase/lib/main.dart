@@ -72,12 +72,12 @@ void main() async {
     debugPrint("5 Register Worker");
 
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      // await Workmanager().registerOneOffTask(
-      //   "backgroundSyncTest",
-      //   "backgroundSync",
-      //   constraints: Constraints(networkType: NetworkType.connected),
-      //   initialDelay: const Duration(seconds: 5),
-      // );
+      await Workmanager().registerOneOffTask(
+        "backgroundSyncTest",
+        "backgroundSync",
+        constraints: Constraints(networkType: NetworkType.connected),
+        initialDelay: const Duration(seconds: 5),
+      );
       await Workmanager().registerPeriodicTask(
         "backgroundSync",
         "backgroundSync",
@@ -85,18 +85,7 @@ void main() async {
         constraints: Constraints(networkType: NetworkType.connected),
       );
     }
-    // ElevatedButton(
-    //   onPressed: () async {
-    //     await Workmanager().registerOneOffTask(
-    //       DateTime.now().millisecondsSinceEpoch.toString(), // unique id
-    //       "backgroundSync",
-    //       constraints: Constraints(networkType: NetworkType.connected),
-    //     );
-    //     debugPrint("Worker Registered");
-    //   },
-    //   child: const Text("Run Worker"),
-    // );
-
+    
     debugPrint("6 runApp");
     runApp(MyApp(appRouter: AppRouter()));
   } catch (e, stack) {
@@ -124,7 +113,8 @@ class MyApp extends StatelessWidget {
             getIt<SyncQueue>(),
             getIt<LoggerService>(),
             getIt<SyncScheduler>(),
-            getIt<RetryScheduler>()
+            getIt<RetryScheduler>(),
+            getIt<SyncService>(),
           ),
         ),
         BlocProvider(create: (context) => SwitchBloc()),

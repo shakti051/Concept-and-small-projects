@@ -29,12 +29,13 @@ part 'tasks_state.dart';
 
 class TasksBloc extends Bloc<TasksEvent, TasksState> {
   ConnectivityBloc connectivityBloc;
-  final SyncQueue syncQueue; // ✅
-  final syncService = getIt.get<SyncService>();
+  final SyncQueue syncQueue;
+  final SyncService syncService;
   final TaskRepository repository;
   final LoggerService logger;
   final SyncScheduler syncScheduler;
   final RetryScheduler retryScheduler;
+
   TasksBloc(
     this.connectivityBloc,
     this.repository,
@@ -42,6 +43,7 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     this.logger,
     this.syncScheduler,
     this.retryScheduler,
+    this.syncService,
   ) : super(const TasksState()) {
     on<AddTask>(_onAddTask);
     on<GetAllTsak>(_onGetAllTask);
@@ -71,21 +73,21 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     );
 
     try {
-      final report = await syncService.sync(await repository.getAll());
+      final localTasks = await repository.getAll();
 
-      // Sync succeeded -> reset retry attempts
-      retryScheduler.reset();
-      debugPrint("===== AFTER SYNC =====");
-      for (final t in report.tasks) {
-        debugPrint("${t.title} | ${t.lastModified}");
-      }
-      emitTasks(
-        emit,
-        report.tasks,
-        syncState: report.failed == 0 ? SyncState.synced : SyncState.failed,
-        syncMessage: report.message,
-      );
+      final report = await syncService.sync(localTasks);
+
+      final sortedTasks = [...report.tasks]..sortByLastModified();
+
+      final newState = sortedTasks
+          .toTasksState(
+            syncState: report.failed == 0 ? SyncState.synced : SyncState.failed,
+          )
+          .copyWith(syncMessage: report.message);
+
+      emit(newState);
     } on AuthenticationException {
+      // Authentication problems should NOT be retried automatically.
       retryScheduler.reset();
 
       emit.emitAuthenticationFailure(state);
@@ -129,24 +131,20 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
 
   Future<void> _onGetAllTask(GetAllTsak event, Emitter<TasksState> emit) async {
     try {
+      debugPrint("🔥 _onGetAllTask START");
+
       final allTasks = await repository.getAll();
-      debugPrint("===== AFTER ADD =====");
-      for (final t in allTasks) {
-        debugPrint("${t.title} | ${t.lastModified}");
-      }
+      debugPrint("🔥 LOCAL TASK COUNT = ${allTasks.length}");
+
       emitTasks(emit, allTasks, syncState: SyncState.synced);
 
       logAllTasks(allTasks);
 
-      // Sync only if there is something pending
-      if (allTasks.any((task) => task.syncStatus != SyncStatus.synced)) {
-        scheduleSync();
-      }
+      scheduleSync();
     } on LocalDatabaseException {
       loadTasksFailure(emit, "Unable to load local tasks.");
     } catch (e, stack) {
       logUnknownError(e, stack);
-
       loadTasksFailure(emit, "Something went wrong while loading tasks.");
     }
   }

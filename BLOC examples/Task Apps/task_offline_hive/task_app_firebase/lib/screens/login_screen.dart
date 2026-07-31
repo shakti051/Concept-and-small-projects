@@ -39,6 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
+                  key: const Key('login_email_field'),
                   controller: _emailController,
                   decoration: const InputDecoration(labelText: 'Insert email'),
                   keyboardType: TextInputType.emailAddress,
@@ -53,6 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
+                  key: const Key('login_password_field'),
                   controller: _passwordController,
                   decoration: const InputDecoration(
                     labelText: 'Insert password',
@@ -68,8 +70,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               ElevatedButton(
+                key: const Key('login_button'),
                 onPressed: () {
                   final isValid = _formKey.currentState!.validate();
+                  if (!isValid) {
+                    return;
+                  }
                   _auth
                       .signInWithEmailAndPassword(
                         email: _emailController.text,
@@ -78,19 +84,21 @@ class _LoginScreenState extends State<LoginScreen> {
                       .then((value) {
                         GetStorage().write("token", value.user!.uid);
                         GetStorage().write("email", value.user!.email);
-                     print("user id from storage ${GetStorage().read("token")}");   
+                        print(
+                          "user id from storage ${GetStorage().read("token")}",
+                        );
                         Navigator.pushReplacementNamed(context, TabsScreen.id);
-                      }).onError((error,stackTrace){
+                      })
+                      .onError((error, stackTrace) {
                         var snackBar = SnackBar(
-                        content: Text(
-                          "Error $error:",
-                          style: TextStyle(color: Colors.red),
-                        ),
-                        //backgroundColor: Colors.green,
-                        duration: Duration(milliseconds: 2000),
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                   
+                          content: Text(
+                            "Error $error:",
+                            style: TextStyle(color: Colors.red),
+                          ),
+                          //backgroundColor: Colors.green,
+                          duration: Duration(milliseconds: 2000),
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
                       });
                 },
                 child: const Text('Login'),
