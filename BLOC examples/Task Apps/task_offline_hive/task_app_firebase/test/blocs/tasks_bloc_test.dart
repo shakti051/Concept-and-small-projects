@@ -267,7 +267,6 @@ void main() {
       when(() => repository.getAll()).thenAnswer(
         (_) async => [task1.copyWith(syncStatus: SyncStatus.pendingCreate)],
       );
-
       return buildBloc();
     },
     act: (bloc) {
