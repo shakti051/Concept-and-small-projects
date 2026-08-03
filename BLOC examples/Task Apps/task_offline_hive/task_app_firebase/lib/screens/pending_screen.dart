@@ -62,40 +62,4 @@ Widget build(BuildContext context) {
   );
 }
 
-  // @override
-  // Widget build(BuildContext context) {
-  //   return BlocBuilder<TasksBloc, TasksState>(
-  //     builder: (context, state) {
-  //       List<Task> tasksList = state.pendingTasks;
-  //       return Column(
-  //         crossAxisAlignment: CrossAxisAlignment.center,
-  //         children: [
-  //           if (!kIsWeb && (Platform.isAndroid || Platform.isIOS))
-  //             ElevatedButton(
-  //               onPressed: () async {
-  //                 await Workmanager().registerOneOffTask(
-  //                   DateTime.now().millisecondsSinceEpoch.toString(),
-  //                   "backgroundSync",
-  //                   constraints: Constraints(
-  //                     networkType: NetworkType.connected,
-  //                   ),
-  //                 );
-  //                 debugPrint("Worker Registered");
-  //               },
-  //               child: const Text("Run Worker"),
-  //             ),
-  //           SizedBox(height: 8),
-  //           Center(
-  //             child: Chip(
-  //               label: Text(
-  //                 '${tasksList.length} Pending | ${state.completedTasks.length} Completed',
-  //               ),
-  //             ),
-  //           ),
-  //           TasksList(tasksList: tasksList),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
 }
