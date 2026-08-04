@@ -1,11 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:task_app_firebase/screens/login_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({super.key});
+  const ForgotPasswordScreen({super.key, required this.auth});
+
   static const id = 'forgot_password_screen';
+
+  final FirebaseAuth auth;
 
   @override
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
@@ -13,14 +15,55 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _resetPassword() async {
+    // Stop here if validation fails.
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    try {
+      await widget.auth.sendPasswordResetEmail(
+        email: _emailController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Check your email'),
+          backgroundColor: Colors.green,
+          duration: Duration(milliseconds: 2000),
+        ),
+      );
+
+      Navigator.pushReplacementNamed(context, LoginScreen.id);
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error ${error.message ?? error.code}'),
+          duration: const Duration(milliseconds: 2000),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error $error'),
+          duration: const Duration(milliseconds: 2000),
+        ),
+      );
+    }
   }
 
   @override
@@ -35,6 +78,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextFormField(
+                key: const Key('forgot_password_email_field'),
+                controller: _emailController,
                 decoration: const InputDecoration(
                   border: UnderlineInputBorder(),
                   labelText: 'Enter your email',
@@ -44,52 +89,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   if (value == null || value.isEmpty) {
                     return 'Email is required';
                   }
+
                   return null;
                 },
-                controller: _emailController,
               ),
             ),
+
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(100, 40),
-                maximumSize: const Size(200, 40),
-              ),
-              onPressed: () async {
-                _formKey.currentState!.validate();
-                await _auth
-                    .sendPasswordResetEmail(email: _emailController.text.trim())
-                    .then((value) {
-                      Navigator.pushReplacementNamed(context, LoginScreen.id);
-                      var snackBar = SnackBar(
-                        content: Text(
-                          "Check your email:",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        backgroundColor: Colors.green,
-                        duration: Duration(milliseconds: 2000),
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                    })
-                    .onError((error, stackTrace) {
-                      var snackBar = SnackBar(
-                        content: Text(
-                          "Error $error:",
-                          style: TextStyle(color: Colors.red),
-                        ),
-                       // backgroundColor: Colors.green,
-                        duration: Duration(milliseconds: 2000),
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                    });
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.mail_outline),
-                  SizedBox(width: 10),
-                  Text("Reset Password"),
-                ],
-              ),
+              key: const Key('reset_password_button'),
+              onPressed: _resetPassword,
+              child: const Text('Reset Password'),
             ),
           ],
         ),

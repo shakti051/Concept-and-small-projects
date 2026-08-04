@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../screens/forgot_password_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/register_screen.dart';
@@ -22,11 +24,11 @@ class AppRouter {
         );
       case LoginScreen.id:
         return MaterialPageRoute(
-          builder: (_) => const LoginScreen(),
+          builder: (_) => LoginScreen(),
         );
       case ForgotPasswordScreen.id:
         return MaterialPageRoute(
-          builder: (_) => const ForgotPasswordScreen(),
+          builder: (_) => ForgotPasswordScreen(auth: FirebaseAuth.instance,),
         );
       default:
         return null;

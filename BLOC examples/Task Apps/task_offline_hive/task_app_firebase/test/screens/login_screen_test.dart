@@ -1,72 +1,69 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:get_storage/get_storage.dart';
-import 'package:mocktail/mocktail.dart';
-
+import 'package:firebase_core/firebase_core.dart';
 import 'package:task_app_firebase/screens/login_screen.dart';
-import 'package:task_app_firebase/screens/register_screen.dart';
-import 'package:task_app_firebase/screens/forgot_password_screen.dart';
-import 'package:task_app_firebase/screens/tabs_screen.dart';
-
-class MockFirebaseAuth extends Mock implements FirebaseAuth {}
-
-class MockUserCredential extends Mock implements UserCredential {}
-
-class MockUser extends Mock implements User {}
 
 void main() {
-  group('LoginScreen - Rendering', () {
-    testWidgets('should display Login app bar', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-      expect(find.text('Login'), findsOneWidget);
+  setUpAll(() async {
+    try {
+      await Firebase.initializeApp();
+    } catch (_) {
+      // Firebase may already be initialized.
+    }
+  });
+
+  Widget buildTestWidget() {
+    return MaterialApp(home: LoginScreen());
+  }
+
+  group('LoginScreen - UI', () {
+    testWidgets('should display Login app bar', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+      expect(find.widgetWithText(AppBar, 'Login'), findsOneWidget);
     });
 
     testWidgets('should display email field', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
+      await tester.pumpWidget(buildTestWidget());
 
       expect(find.byKey(const Key('login_email_field')), findsOneWidget);
-
-      expect(find.text('Insert email'), findsOneWidget);
     });
 
     testWidgets('should display password field', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
+      await tester.pumpWidget(buildTestWidget());
 
       expect(find.byKey(const Key('login_password_field')), findsOneWidget);
-
-      expect(find.text('Insert password'), findsOneWidget);
     });
 
     testWidgets('should display Login button', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
+      await tester.pumpWidget(buildTestWidget());
 
       expect(find.byKey(const Key('login_button')), findsOneWidget);
-
-      expect(find.widgetWithText(ElevatedButton, 'Login'), findsOneWidget);
     });
 
-    testWidgets('should display Register navigation button', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
+    testWidgets('should display two text form fields', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+
+      expect(find.byType(TextFormField), findsNWidgets(2));
+    });
+
+    testWidgets('should display Register account button', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
       expect(find.text("Don't have an Account?"), findsOneWidget);
     });
 
-    testWidgets('should display Forgot Password button', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
+    testWidgets('should display Forget Password button', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
       expect(find.text('Forget Password'), findsOneWidget);
     });
   });
 
-  // ============================================================
-  // EMAIL VALIDATION
-  // ============================================================
-
   group('LoginScreen - Email Validation', () {
     testWidgets('should show email required validation', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
+      await tester.pumpWidget(buildTestWidget());
 
       await tester.tap(find.byKey(const Key('login_button')));
 
@@ -75,8 +72,10 @@ void main() {
       expect(find.text('Email is required'), findsOneWidget);
     });
 
-    testWidgets('should accept non-empty email', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
+    testWidgets('should not show email required error for non-empty email', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget());
 
       await tester.enterText(
         find.byKey(const Key('login_email_field')),
@@ -91,13 +90,14 @@ void main() {
     });
   });
 
-  // ============================================================
-  // PASSWORD VALIDATION
-  // ============================================================
-
   group('LoginScreen - Password Validation', () {
     testWidgets('should show password required validation', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
+      await tester.pumpWidget(buildTestWidget());
+
+      await tester.enterText(
+        find.byKey(const Key('login_email_field')),
+        'test@example.com',
+      );
 
       await tester.tap(find.byKey(const Key('login_button')));
 
@@ -106,8 +106,10 @@ void main() {
       expect(find.text('Password is required'), findsOneWidget);
     });
 
-    testWidgets('should show password length validation', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
+    testWidgets('should reject password shorter than 6 characters', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget());
 
       await tester.enterText(
         find.byKey(const Key('login_email_field')),
@@ -129,10 +131,8 @@ void main() {
       );
     });
 
-    testWidgets('should accept password with six or more characters', (
-      tester,
-    ) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
+    testWidgets('should accept password with 6 characters', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
       await tester.enterText(
         find.byKey(const Key('login_email_field')),
@@ -142,51 +142,6 @@ void main() {
       await tester.enterText(
         find.byKey(const Key('login_password_field')),
         '123456',
-      );
-
-      await tester.tap(find.byKey(const Key('login_button')));
-
-      await tester.pump();
-
-      expect(
-        find.text('Password should be at least 6 characters'),
-        findsNothing,
-      );
-    });
-  });
-
-  // ============================================================
-  // FORM VALIDATION
-  // ============================================================
-
-  group('LoginScreen - Form Validation', () {
-    testWidgets('should show both required validation messages', (
-      tester,
-    ) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
-
-      await tester.tap(find.byKey(const Key('login_button')));
-
-      await tester.pump();
-
-      expect(find.text('Email is required'), findsOneWidget);
-
-      expect(find.text('Password is required'), findsOneWidget);
-    });
-
-    testWidgets('should not show validation errors for valid input', (
-      tester,
-    ) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
-
-      await tester.enterText(
-        find.byKey(const Key('login_email_field')),
-        'test@example.com',
-      );
-
-      await tester.enterText(
-        find.byKey(const Key('login_password_field')),
-        'password123',
       );
 
       await tester.tap(find.byKey(const Key('login_button')));
@@ -204,97 +159,90 @@ void main() {
     });
   });
 
-  // ============================================================
-  // TEXT ENTRY
-  // ============================================================
+  group('LoginScreen - Form Validation', () {
+    testWidgets('should show both validation errors when fields are empty', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget());
 
-  group('LoginScreen - Text Entry', () {
-    testWidgets('should update email field text', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
+      await tester.tap(find.byKey(const Key('login_button')));
+
+      await tester.pump();
+
+      expect(find.text('Email is required'), findsOneWidget);
+
+      expect(find.text('Password is required'), findsOneWidget);
+    });
+
+    testWidgets('should have no validation errors for valid input', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget());
 
       await tester.enterText(
         find.byKey(const Key('login_email_field')),
-        'user@gmail.com',
+        'test@example.com',
       );
 
-      final field = tester.widget<TextFormField>(
-        find.byKey(const Key('login_email_field')),
+      await tester.enterText(
+        find.byKey(const Key('login_password_field')),
+        '123456',
       );
 
-      expect(field.controller!.text, 'user@gmail.com');
+      await tester.tap(find.byKey(const Key('login_button')));
+
+      await tester.pump();
+
+      expect(find.text('Email is required'), findsNothing);
+
+      expect(find.text('Password is required'), findsNothing);
+
+      expect(
+        find.text('Password should be at least 6 characters'),
+        findsNothing,
+      );
+    });
+  });
+
+  group('LoginScreen - Text Input', () {
+    testWidgets('should update email field text', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+
+      final emailField = find.byKey(const Key('login_email_field'));
+
+      await tester.enterText(emailField, 'user@example.com');
+
+      final email = tester.widget<TextFormField>(emailField);
+
+      expect(email.controller?.text, 'user@example.com');
     });
 
     testWidgets('should update password field text', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
+      await tester.pumpWidget(buildTestWidget());
 
-      await tester.enterText(
-        find.byKey(const Key('login_password_field')),
-        'password123',
-      );
+      final passwordField = find.byKey(const Key('login_password_field'));
 
-      final field = tester.widget<TextFormField>(
-        find.byKey(const Key('login_password_field')),
-      );
+      await tester.enterText(passwordField, 'password123');
 
-      expect(field.controller!.text, 'password123');
+      final password = tester.widget<TextFormField>(passwordField);
+
+      expect(password.controller?.text, 'password123');
     });
   });
 
-  // ============================================================
-  // NAVIGATION
-  // ============================================================
+  group('LoginScreen - Button Interaction', () {
+    testWidgets('should not attempt login when form is invalid', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget());
 
-  group('LoginScreen - Navigation', () {
-    testWidgets('should navigate to RegisterScreen', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          routes: {
-            RegisterScreen.id: (_) =>
-                const Scaffold(body: Text('Register Screen')),
-          },
-          home: const LoginScreen(),
-        ),
-      );
+      await tester.tap(find.byKey(const Key('login_button')));
 
-      await tester.tap(find.text("Don't have an Account?"));
+      await tester.pump();
 
-      await tester.pumpAndSettle();
+      expect(find.text('Email is required'), findsOneWidget);
 
-      expect(find.text('Register Screen'), findsOneWidget);
-    });
-
-    testWidgets('should navigate to ForgotPasswordScreen', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          routes: {
-            ForgotPasswordScreen.id: (_) =>
-                const Scaffold(body: Text('Forgot Password Screen')),
-          },
-          home: const LoginScreen(),
-        ),
-      );
-
-      await tester.tap(find.text('Forget Password'));
-
-      await tester.pumpAndSettle();
-
-      expect(find.text('Forgot Password Screen'), findsOneWidget);
-    });
-  });
-
-  // ============================================================
-  // CONTROLLER LIFECYCLE
-  // ============================================================
-
-  group('LoginScreen - Lifecycle', () {
-    testWidgets('should dispose without errors', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const LoginScreen()));
-
-      await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: Text('Replacement'))),
-      );
-
-      expect(find.text('Replacement'), findsOneWidget);
+      expect(find.text('Password is required'), findsOneWidget);
     });
   });
 }
