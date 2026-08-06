@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:task_app_firebase/screens/login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  const RegisterScreen({super.key, this.auth});
 
   static const id = 'register_screen';
+
+  final FirebaseAuth? auth;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -14,11 +16,9 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _emailController =
-      TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
-  final TextEditingController _passwordController =
-      TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   void dispose() {
@@ -28,64 +28,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
-    // First validate the form.
     final isValid = _formKey.currentState!.validate();
 
-    // IMPORTANT:
-    // Do not call Firebase when validation fails.
     if (!isValid) {
       return;
     }
 
-    try {
-      final auth = FirebaseAuth.instance;
+    // Use injected FirebaseAuth when testing.
+    // Use FirebaseAuth.instance in the real application.
+    final auth = widget.auth ?? FirebaseAuth.instance;
 
+    try {
       await auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
-      Navigator.pushReplacementNamed(
-        context,
-        LoginScreen.id,
-      );
+      Navigator.pushReplacementNamed(context, LoginScreen.id);
     } on FirebaseAuthException catch (error) {
-      if (!mounted) return;
-
-      final snackBar = SnackBar(
-        content: Text(
-          'Error ${error.message ?? error.code}',
-          style: const TextStyle(
-            color: Colors.red,
-          ),
-        ),
-        duration: const Duration(
-          milliseconds: 2000,
-        ),
-      );
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        snackBar,
+        SnackBar(
+          content: Text(
+            'Error ${error.message ?? error.code}',
+            style: const TextStyle(color: Colors.red),
+          ),
+          duration: const Duration(milliseconds: 2000),
+        ),
       );
     } catch (error) {
-      if (!mounted) return;
-
-      final snackBar = SnackBar(
-        content: Text(
-          'Error $error',
-          style: const TextStyle(
-            color: Colors.red,
-          ),
-        ),
-        duration: const Duration(
-          milliseconds: 2000,
-        ),
-      );
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        snackBar,
+        SnackBar(
+          content: Text(
+            'Error $error',
+            style: const TextStyle(color: Colors.red),
+          ),
+          duration: const Duration(milliseconds: 2000),
+        ),
       );
     }
   }
@@ -93,9 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-      ),
+      appBar: AppBar(title: const Text('Register')),
       body: Form(
         key: _formKey,
         child: Column(
@@ -105,9 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               padding: const EdgeInsets.all(8.0),
               child: TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Insert email',
-                ),
+                decoration: const InputDecoration(labelText: 'Insert email'),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -123,9 +109,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               padding: const EdgeInsets.all(8.0),
               child: TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Insert password',
-                ),
+                decoration: const InputDecoration(labelText: 'Insert password'),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -142,6 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
 
             ElevatedButton(
+              key: const Key('register_button'),
               onPressed: _register,
               child: const Text('Register'),
             ),
@@ -151,4 +136,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-

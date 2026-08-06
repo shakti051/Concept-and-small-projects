@@ -37,7 +37,7 @@ class TaskRepository {
   }
 
   Future<void> updateRemote(Task task) async {
-    await FirestoreRepository.update(task);
+    await FirestoreRepository.update(task: task);
   }
 
   Future<void> deleteRemote(Task task) async {

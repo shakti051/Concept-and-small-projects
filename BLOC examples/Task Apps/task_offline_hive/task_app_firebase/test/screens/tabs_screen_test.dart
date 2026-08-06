@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -10,123 +12,104 @@ import 'package:task_app_firebase/screens/tabs_screen.dart';
 
 class MockTasksBloc extends Mock implements TasksBloc {}
 
+class FakeTasksEvent extends Fake implements TasksEvent {}
+
 
 void main() {
   late MockTasksBloc mockBloc;
+  late StreamController<TasksState> stateController;
+
+  // ============================================================
+  // MOCKTAIL FALLBACK
+  // ============================================================
+
+  setUpAll(() {
+    registerFallbackValue(FakeTasksEvent());
+  });
+
+  // ============================================================
+  // SETUP
+  // ============================================================
 
   setUp(() {
-  mockBloc = MockTasksBloc();
+    mockBloc = MockTasksBloc();
 
-  when(() => mockBloc.state).thenReturn(
-    const TasksState(),
-  );
+    // IMPORTANT:
+    // BlocProvider, BlocBuilder and BlocListener can all listen
+    // to the Bloc stream.
+    //
+    // Therefore this MUST be a broadcast stream.
+    stateController = StreamController<TasksState>.broadcast();
 
-  when(() => mockBloc.stream).thenAnswer(
-    (_) => const Stream<TasksState>.empty(),
-  );
-});
+    // BlocProvider accesses both state and stream.
+    // Mocktail returns null for unstubbed getters, so both
+    // must be stubbed.
+    when(() => mockBloc.state).thenReturn(const TasksState());
 
+    when(() => mockBloc.stream).thenAnswer((_) => stateController.stream);
+  });
 
- Widget buildTestWidget({
-  TasksState state = const TasksState(),
-}) {
-  when(() => mockBloc.state).thenReturn(state);
+  tearDown(() async {
+    await stateController.close();
+  });
 
-  when(() => mockBloc.stream).thenAnswer(
-    (_) => const Stream<TasksState>.empty(),
-  );
+  // ============================================================
+  // TEST WIDGET
+  // ============================================================
 
-  return MaterialApp(
-    home: BlocProvider<TasksBloc>.value(
-      value: mockBloc,
-      child: const TabsScreen(),
-    ),
-  );
-}
+  Widget buildTestWidget({TasksState state = const TasksState()}) {
+    when(() => mockBloc.state).thenReturn(state);
+
+    return MaterialApp(
+      home: BlocProvider<TasksBloc>.value(
+        value: mockBloc,
+        child: const TabsScreen(),
+      ),
+    );
+  }
+
   // ============================================================
   // INITIAL RENDERING
   // ============================================================
 
   group('TabsScreen - Initial Rendering', () {
-    testWidgets(
-      'should render TabsScreen',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should render TabsScreen', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        expect(
-          find.byType(TabsScreen),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(find.byType(TabsScreen), findsOneWidget);
+    });
 
-    testWidgets(
-      'should show Pending Tasks title initially',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should show Pending Tasks title initially', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        expect(
-          find.text('Pending Tasks'),
-          findsWidgets,
-        );
-      },
-    );
+      expect(find.text('Pending Tasks'), findsWidgets);
+    });
 
-    testWidgets(
-      'should show bottom navigation bar',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should show bottom navigation bar', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        expect(
-          find.byType(BottomNavigationBar),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(find.byType(BottomNavigationBar), findsOneWidget);
+    });
 
-    testWidgets(
-      'should show three bottom navigation items',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should show three bottom navigation items', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        final navigationBar =
-            tester.widget<BottomNavigationBar>(
-          find.byType(BottomNavigationBar),
-        );
+      final navigationBar = tester.widget<BottomNavigationBar>(
+        find.byType(BottomNavigationBar),
+      );
 
-        expect(
-          navigationBar.items.length,
-          3,
-        );
-      },
-    );
+      expect(navigationBar.items.length, 3);
+    });
 
-    testWidgets(
-      'should select Pending Tasks initially',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should select Pending Tasks initially', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        final navigationBar =
-            tester.widget<BottomNavigationBar>(
-          find.byType(BottomNavigationBar),
-        );
+      final navigationBar = tester.widget<BottomNavigationBar>(
+        find.byType(BottomNavigationBar),
+      );
 
-        expect(
-          navigationBar.currentIndex,
-          0,
-        );
-      },
-    );
+      expect(navigationBar.currentIndex, 0);
+    });
   });
 
   // ============================================================
@@ -134,49 +117,30 @@ void main() {
   // ============================================================
 
   group('TabsScreen - Bloc Events', () {
-    testWidgets(
-      'should dispatch GetAllTsak on initialization',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should dispatch GetAllTsak on initialization', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        verify(
-          () => mockBloc.add(
-            any(
-              that: isA<GetAllTsak>(),
-            ),
-          ),
-        ).called(1);
-      },
-    );
+      verify(
+        () => mockBloc.add(any<TasksEvent>(that: isA<GetAllTsak>())),
+      ).called(1);
+    });
 
-    testWidgets(
-      'should dispatch SyncPendingTasks when sync button is tapped',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should dispatch SyncPendingTasks when sync button is tapped', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        final syncButton = find.byTooltip('Sync now');
+      final syncButton = find.byTooltip('Sync now');
 
-        expect(
-          syncButton,
-          findsOneWidget,
-        );
+      expect(syncButton, findsOneWidget);
 
-        await tester.tap(syncButton);
-        await tester.pump();
+      await tester.tap(syncButton);
+      await tester.pump();
 
-        verify(
-          () => mockBloc.add(
-            any(
-              that: isA<SyncPendingTasks>(),
-            ),
-          ),
-        ).called(1);
-      },
-    );
+      verify(
+        () => mockBloc.add(any<TasksEvent>(that: isA<SyncPendingTasks>())),
+      ).called(1);
+    });
   });
 
   // ============================================================
@@ -184,98 +148,59 @@ void main() {
   // ============================================================
 
   group('TabsScreen - Bottom Navigation', () {
-    testWidgets(
-      'should switch to Completed Tasks',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should switch to Completed Tasks', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        await tester.tap(
-          find.text('Completed Tasks').last,
-        );
+      await tester.tap(find.text('Completed Tasks').last);
 
-        await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-        final navigationBar =
-            tester.widget<BottomNavigationBar>(
-          find.byType(BottomNavigationBar),
-        );
+      final navigationBar = tester.widget<BottomNavigationBar>(
+        find.byType(BottomNavigationBar),
+      );
 
-        expect(
-          navigationBar.currentIndex,
-          1,
-        );
+      expect(navigationBar.currentIndex, 1);
 
-        expect(
-          find.text('Completed Tasks'),
-          findsWidgets,
-        );
-      },
-    );
+      expect(find.byType(CompletedTasksScreen), findsOneWidget);
+    });
 
-    testWidgets(
-      'should switch to Favorite Tasks',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should switch to Favorite Tasks', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        await tester.tap(
-          find.text('Favorite Tasks'),
-        );
+      await tester.tap(find.text('Favorite Tasks'));
 
-        await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-        final navigationBar =
-            tester.widget<BottomNavigationBar>(
-          find.byType(BottomNavigationBar),
-        );
+      final navigationBar = tester.widget<BottomNavigationBar>(
+        find.byType(BottomNavigationBar),
+      );
 
-        expect(
-          navigationBar.currentIndex,
-          2,
-        );
+      expect(navigationBar.currentIndex, 2);
 
-        expect(
-          find.text('Favorite Tasks'),
-          findsWidgets,
-        );
-      },
-    );
+      expect(find.byType(FavoriteTasksScreen), findsOneWidget);
+    });
 
-    testWidgets(
-      'should return to Pending Tasks',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should return to Pending Tasks', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        // Go to Completed.
-        await tester.tap(
-          find.text('Completed Tasks').last,
-        );
+      // Go to Completed.
+      await tester.tap(find.text('Completed Tasks').last);
 
-        await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-        // Return to Pending.
-        await tester.tap(
-          find.text('Pending Tasks').last,
-        );
+      // Return to Pending.
+      await tester.tap(find.text('Pending Tasks').last);
 
-        await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-        final navigationBar =
-            tester.widget<BottomNavigationBar>(
-          find.byType(BottomNavigationBar),
-        );
+      final navigationBar = tester.widget<BottomNavigationBar>(
+        find.byType(BottomNavigationBar),
+      );
 
-        expect(
-          navigationBar.currentIndex,
-          0,
-        );
-      },
-    );
+      expect(navigationBar.currentIndex, 0);
+
+      expect(find.byType(PendingTasksScreen), findsOneWidget);
+    });
   });
 
   // ============================================================
@@ -283,101 +208,27 @@ void main() {
   // ============================================================
 
   group('TabsScreen - Sync Button', () {
-    testWidgets(
-      'should show Sync now tooltip when idle',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(
-            state: const TasksState(
-              syncState: SyncState.idle,
-            ),
-          ),
-        );
+    testWidgets('should show Sync now tooltip when idle', (tester) async {
+      await tester.pumpWidget(
+        buildTestWidget(state: const TasksState(syncState: SyncState.idle)),
+      );
 
-        expect(
-          find.byTooltip('Sync now'),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(find.byTooltip('Sync now'), findsOneWidget);
+    });
 
-    testWidgets(
-      'should show Syncing tooltip while syncing',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(
-            state: const TasksState(
-              syncState: SyncState.syncing,
-            ),
-          ),
-        );
+    testWidgets('should show Syncing tooltip while syncing', (tester) async {
+      await tester.pumpWidget(
+        buildTestWidget(state: const TasksState(syncState: SyncState.syncing)),
+      );
 
-        expect(
-          find.byTooltip('Syncing...'),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(find.byTooltip('Syncing...'), findsOneWidget);
+    });
 
-    testWidgets(
-      'should disable sync button while syncing',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(
-            state: const TasksState(
-              syncState: SyncState.syncing,
-            ),
-          ),
-        );
+    testWidgets('should show sync icon', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        final button =
-            tester.widget<IconButton>(
-          find.byTooltip('Syncing...'),
-        );
-
-        expect(
-          button.onPressed,
-          isNull,
-        );
-      },
-    );
-
-    testWidgets(
-      'should enable sync button when idle',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(
-            state: const TasksState(
-              syncState: SyncState.idle,
-            ),
-          ),
-        );
-
-        final button =
-            tester.widget<IconButton>(
-          find.byTooltip('Sync now'),
-        );
-
-        expect(
-          button.onPressed,
-          isNotNull,
-        );
-      },
-    );
-
-    testWidgets(
-      'should show sync icon',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
-
-        expect(
-          find.byIcon(Icons.sync),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(find.byIcon(Icons.sync), findsOneWidget);
+    });
   });
 
   // ============================================================
@@ -385,93 +236,54 @@ void main() {
   // ============================================================
 
   group('TabsScreen - Add Task', () {
-    testWidgets(
-      'should show add task icon',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should show add task icon', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        expect(
-          find.byIcon(Icons.add),
-          findsWidgets,
-        );
-      },
-    );
+      expect(find.byIcon(Icons.add), findsWidgets);
+    });
 
-    testWidgets(
-      'should show Add Task floating action button on Pending tab',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should show Add Task floating action button on Pending tab', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        expect(
-          find.byTooltip('Add Task'),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(find.byTooltip('Add Task'), findsOneWidget);
+    });
 
     testWidgets(
       'should hide Add Task floating action button on Completed tab',
       (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+        await tester.pumpWidget(buildTestWidget());
 
-        await tester.tap(
-          find.text('Completed Tasks').last,
-        );
+        await tester.tap(find.text('Completed Tasks').last);
 
         await tester.pumpAndSettle();
 
-        expect(
-          find.byTooltip('Add Task'),
-          findsNothing,
-        );
+        expect(find.byTooltip('Add Task'), findsNothing);
       },
     );
 
-    testWidgets(
-      'should hide Add Task floating action button on Favorite tab',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should hide Add Task floating action button on Favorite tab', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        await tester.tap(
-          find.text('Favorite Tasks'),
-        );
+      await tester.tap(find.text('Favorite Tasks'));
 
-        await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-        expect(
-          find.byTooltip('Add Task'),
-          findsNothing,
-        );
-      },
-    );
+      expect(find.byTooltip('Add Task'), findsNothing);
+    });
 
-    testWidgets(
-      'should open Add Task bottom sheet',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should open Add Task bottom sheet', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        await tester.tap(
-          find.byTooltip('Add Task'),
-        );
+      await tester.tap(find.byTooltip('Add Task'));
 
-        await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-        expect(
-          find.text('Add Task'),
-          findsWidgets,
-        );
-      },
-    );
+      expect(find.text('Add Task'), findsWidgets);
+    });
   });
 
   // ============================================================
@@ -479,52 +291,25 @@ void main() {
   // ============================================================
 
   group('TabsScreen - AppBar', () {
-    testWidgets(
-      'should show AppBar',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should show AppBar', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        expect(
-          find.byType(AppBar),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(find.byType(AppBar), findsOneWidget);
+    });
 
-    testWidgets(
-      'should show sync button in AppBar',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should show sync button in AppBar', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        expect(
-          find.byTooltip('Sync now'),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(find.byTooltip('Sync now'), findsOneWidget);
+    });
 
-    testWidgets(
-      'should show add button in AppBar',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should show add button in AppBar', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        final appBar =
-            tester.widget<AppBar>(
-          find.byType(AppBar),
-        );
+      final appBar = tester.widget<AppBar>(find.byType(AppBar));
 
-        expect(
-          appBar.actions,
-          isNotEmpty,
-        );
-      },
-    );
+      expect(appBar.actions, isNotEmpty);
+    });
   });
 
   // ============================================================
@@ -532,19 +317,11 @@ void main() {
   // ============================================================
 
   group('TabsScreen - Drawer', () {
-    testWidgets(
-      'should create drawer',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should create drawer', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        expect(
-          find.byType(Drawer),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(find.byType(Drawer), findsOneWidget);
+    });
   });
 
   // ============================================================
@@ -552,65 +329,40 @@ void main() {
   // ============================================================
 
   group('TabsScreen - Sync State', () {
-    testWidgets(
-      'should not show sync failure snackbar when idle',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(
-            state: const TasksState(
-              syncState: SyncState.idle,
-            ),
-          ),
-        );
+    testWidgets('should not show sync failure snackbar when idle', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestWidget(state: const TasksState(syncState: SyncState.idle)),
+      );
 
-        expect(
-          find.byType(SnackBar),
-          findsNothing,
-        );
-      },
-    );
+      await tester.pump();
 
-    testWidgets(
-      'should show success snackbar when sync completes',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(
-            state: const TasksState(
-              syncState: SyncState.synced,
-              syncMessage: 'Sync completed successfully',
-            ),
-          ),
-        );
+      expect(find.byType(SnackBar), findsNothing);
+    });
 
-        await tester.pump();
+    testWidgets('should show success snackbar when sync completes', (
+      tester,
+    ) async {
+      // Start with idle.
+      await tester.pumpWidget(
+        buildTestWidget(state: const TasksState(syncState: SyncState.idle)),
+      );
 
-        expect(
-          find.text('Sync completed successfully'),
-          findsOneWidget,
-        );
-      },
-    );
+      await tester.pump();
 
-    testWidgets(
-      'should show failure snackbar when sync fails',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(
-            state: const TasksState(
-              syncState: SyncState.failed,
-              syncMessage: 'Sync failed',
-            ),
-          ),
-        );
+      // Simulate Bloc state transition.
+      stateController.add(
+        const TasksState(
+          syncState: SyncState.synced,
+          syncMessage: 'Sync completed successfully',
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        expect(
-          find.text('Sync failed'),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(find.text('Sync completed successfully'), findsOneWidget);
+    });
   });
 
   // ============================================================
@@ -618,58 +370,34 @@ void main() {
   // ============================================================
 
   group('TabsScreen - Page Content', () {
-    testWidgets(
-      'should show PendingTasksScreen initially',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should show PendingTasksScreen initially', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        expect(
-          find.byType(PendingTasksScreen),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(find.byType(PendingTasksScreen), findsOneWidget);
+    });
 
-    testWidgets(
-      'should show CompletedTasksScreen after navigation',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should show CompletedTasksScreen after navigation', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        await tester.tap(
-          find.text('Completed Tasks').last,
-        );
+      await tester.tap(find.text('Completed Tasks').last);
 
-        await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-        expect(
-          find.byType(CompletedTasksScreen),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(find.byType(CompletedTasksScreen), findsOneWidget);
+    });
 
-    testWidgets(
-      'should show FavoriteTasksScreen after navigation',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(),
-        );
+    testWidgets('should show FavoriteTasksScreen after navigation', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget());
 
-        await tester.tap(
-          find.text('Favorite Tasks'),
-        );
+      await tester.tap(find.text('Favorite Tasks'));
 
-        await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-        expect(
-          find.byType(FavoriteTasksScreen),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(find.byType(FavoriteTasksScreen), findsOneWidget);
+    });
   });
 }

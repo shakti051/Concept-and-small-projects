@@ -6,25 +6,27 @@ import '../core/mappers/firebase_exception_mapper.dart';
 import '../models/task.dart';
 
 class FirestoreRepository {
-  static FirebaseFirestore firestore = FirebaseFirestore.instance;
+  static final FirebaseFirestore firestore =
+      FirebaseFirestore.instance;
 
   static String? testUserEmail;
 
   static String get _userCollection {
-    final email = testUserEmail ?? GetStorage().read("email");
+    final email =
+        testUserEmail ?? GetStorage().read("email");
 
     if (email == null || email.isEmpty) {
       throw Exception("No logged in user.");
     }
 
-    return email;
+    return email.trim().toLowerCase();
   }
 
-  static Future<void> create({Task? task}) async {
+  static Future<void> create({required Task task}) async {
     try {
       await firestore
           .collection(_userCollection)
-          .doc(task!.id)
+          .doc(task.id)
           .set(task.toFirestoreMap());
     } on FirebaseException catch (e) {
       FirebaseExceptionMapper.throwMapped(e);
@@ -33,40 +35,51 @@ class FirestoreRepository {
 
   static Future<List<Task>> get() async {
     try {
-      final data = await firestore.collection(_userCollection).get();
+      final snapshot =
+          await firestore.collection(_userCollection).get();
 
-      return data.docs.map((doc) => Task.fromMap(doc.data())).toList();
+      return snapshot.docs
+          .map((doc) => Task.fromMap(doc.data()))
+          .toList();
     } on FirebaseException catch (e) {
       FirebaseExceptionMapper.throwMapped(e);
     }
+
+    return [];
   }
 
-  static Future<void> update(Task? task) async {
+  static Future<void> update({required Task task}) async {
     try {
       await firestore
           .collection(_userCollection)
-          .doc(task!.id)
+          .doc(task.id)
           .update(task.toFirestoreMap());
     } on FirebaseException catch (e) {
       FirebaseExceptionMapper.throwMapped(e);
     }
   }
 
-  static Future<void> delete({Task? task}) async {
+  static Future<void> delete({required Task task}) async {
     try {
-      await firestore.collection(_userCollection).doc(task!.id).delete();
+      await firestore
+          .collection(_userCollection)
+          .doc(task.id)
+          .delete();
     } on FirebaseException catch (e) {
       FirebaseExceptionMapper.throwMapped(e);
     }
   }
 
-  static Future<void> deleteAllRemovedTask({List<Task>? taskList}) async {
+  static Future<void> deleteAllRemovedTask({
+    required List<Task> taskList,
+  }) async {
     try {
       final batch = firestore.batch();
 
-      final collection = firestore.collection(_userCollection);
+      final collection =
+          firestore.collection(_userCollection);
 
-      for (final task in taskList ?? []) {
+      for (final task in taskList) {
         batch.delete(collection.doc(task.id));
       }
 

@@ -48,6 +48,9 @@ class Task extends Equatable {
   @HiveField(8)
   final DateTime lastModified;
 
+  @HiveField(9)
+  final String ownerId;
+
   const Task({
     required this.title,
     required this.description,
@@ -58,6 +61,7 @@ class Task extends Equatable {
     this.isFavorite = false,
     this.syncStatus = SyncStatus.synced,
     required this.lastModified,
+    required this.ownerId,
   });
 
   Task copyWith({
@@ -70,6 +74,7 @@ class Task extends Equatable {
     bool? isFavorite,
     SyncStatus? syncStatus,
     DateTime? lastModified,
+    String? ownerId,
   }) {
     return Task(
       title: title ?? this.title,
@@ -81,10 +86,10 @@ class Task extends Equatable {
       isFavorite: isFavorite ?? this.isFavorite,
       syncStatus: syncStatus ?? this.syncStatus,
       lastModified: lastModified ?? this.lastModified,
+      ownerId: ownerId ?? this.ownerId,
     );
   }
 
-  /// Used for local storage (Hive)
   Map<String, dynamic> toMap() {
     return {
       'title': title,
@@ -96,10 +101,10 @@ class Task extends Equatable {
       'isFavorite': isFavorite,
       'syncStatus': syncStatus.name,
       'lastModified': lastModified.toUtc().toIso8601String(),
+      'ownerId': ownerId,
     };
   }
 
-  /// Used ONLY for Firestore
   Map<String, dynamic> toFirestoreMap() {
     return {
       'title': title,
@@ -109,12 +114,11 @@ class Task extends Equatable {
       'isDone': isDone,
       'isDeleted': isDeleted,
       'isFavorite': isFavorite,
-      // syncStatus intentionally NOT uploaded
       'lastModified': lastModified.toUtc().toIso8601String(),
+      'ownerId': ownerId,
     };
   }
 
-  /// Used when reading from Firestore
   factory Task.fromMap(Map<String, dynamic> map) {
     return Task(
       title: map['title'] ?? '',
@@ -124,12 +128,10 @@ class Task extends Equatable {
       isDone: map['isDone'] ?? false,
       isDeleted: map['isDeleted'] ?? false,
       isFavorite: map['isFavorite'] ?? false,
+      ownerId: map['ownerId'] ?? '',
       lastModified: map['lastModified'] != null
           ? DateTime.parse(map['lastModified'])
           : DateTime.now().toUtc(),
-
-      // Firestore data is always considered synced
-       // If it exists (local import etc.) preserve it.
       syncStatus: SyncStatus.values.firstWhere(
         (e) => e.name == (map['syncStatus'] ?? 'synced'),
         orElse: () => SyncStatus.synced,
@@ -139,14 +141,15 @@ class Task extends Equatable {
 
   @override
   List<Object?> get props => [
-    title,
-    description,
-    id,
-    date,
-    isDone,
-    isDeleted,
-    isFavorite,
-    syncStatus,
-    lastModified,
-  ];
+        title,
+        description,
+        id,
+        date,
+        isDone,
+        isDeleted,
+        isFavorite,
+        syncStatus,
+        lastModified,
+        ownerId,
+      ];
 }

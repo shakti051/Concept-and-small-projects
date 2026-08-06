@@ -57,12 +57,16 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     on<SyncPendingTasks>(_onSyncPendingTasks, transformer: droppable());
   }
 
-  @override
-  Future<void> close() {
-    syncScheduler.dispose();
-    retryScheduler.dispose();
-    return super.close();
-  }
+
+@override
+Future<void> close() {
+  syncQueue.dispose();
+  syncScheduler.dispose();
+  retryScheduler.dispose();
+
+  return super.close();
+}
+
 
   Future<void> _onSyncPendingTasks(
     SyncPendingTasks event,

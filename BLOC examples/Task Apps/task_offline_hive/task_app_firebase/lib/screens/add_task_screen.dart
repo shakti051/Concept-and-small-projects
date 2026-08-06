@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:task_app_firebase/services/locator.dart';
 import 'package:uuid/uuid.dart';
@@ -69,14 +70,22 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     );
                     return;
                   }
+                  final user = FirebaseAuth.instance.currentUser;
+
+                  if (user == null) {
+                    throw Exception('User is not logged in');
+                  }
+
                   final task = Task(
                     title: title,
                     description: description,
                     id: getIt<Uuid>().v4(),
                     date: DateTime.now().toIso8601String(),
                     syncStatus: SyncStatus.pendingCreate,
-                    lastModified: DateTime.now()
-                    );
+                    lastModified: DateTime.now().toUtc(),
+                    ownerId: user.uid, // NEW
+                  );
+
                   context.read<TasksBloc>().add(AddTask(task: task));
                   //context.read<TasksBloc>().add(GetAllTsak());
                   Navigator.pop(context);

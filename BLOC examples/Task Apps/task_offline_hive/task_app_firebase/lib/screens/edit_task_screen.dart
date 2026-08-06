@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../blocs/bloc_exports.dart';
 import '../models/task.dart';
@@ -53,8 +54,14 @@ class EditTaskScreen extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
               child: const Text('cancel'),
             ),
+            
             ElevatedButton(
               onPressed: () {
+                final user = FirebaseAuth.instance.currentUser;
+
+                  if (user == null) {
+                    throw Exception('User is not logged in');
+                  }
                 var editedTask = Task(
                   title: titleController.text,
                   description: descriptionController.text,
@@ -62,7 +69,8 @@ class EditTaskScreen extends StatelessWidget {
                   isDone: false,
                   isFavorite: oldTask.isFavorite,
                   date: DateTime.now().toString(),
-                  lastModified: DateTime.now()
+                  lastModified: DateTime.now(),
+                  ownerId: user.uid
                 );
                 context.read<TasksBloc>().add(EditTask(
                       oldTask: oldTask,

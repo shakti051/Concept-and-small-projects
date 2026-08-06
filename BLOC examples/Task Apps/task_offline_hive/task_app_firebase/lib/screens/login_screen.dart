@@ -1,12 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
+
 import 'package:task_app_firebase/screens/forgot_password_screen.dart';
 import 'package:task_app_firebase/screens/register_screen.dart';
 import 'package:task_app_firebase/screens/tabs_screen.dart';
+import 'package:task_app_firebase/services/locator.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.auth});
+  const LoginScreen({
+    super.key,
+    this.auth,
+  });
 
   static const id = 'login_screen';
 
@@ -17,11 +22,15 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _emailController =
+      TextEditingController();
 
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _passwordController =
+      TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -33,7 +42,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(
+        title: const Text('Login'),
+      ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -45,10 +56,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: TextFormField(
                   key: const Key('login_email_field'),
                   controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'Insert email'),
+                  decoration: const InputDecoration(
+                    labelText: 'Insert email',
+                  ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'Email is required';
                     }
 
@@ -65,6 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Insert password',
                   ),
+                  obscureText: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Password is required';
@@ -81,23 +95,39 @@ class _LoginScreenState extends State<LoginScreen> {
 
               ElevatedButton(
                 key: const Key('login_button'),
-                onPressed: _login,
-                child: const Text('Login'),
+                onPressed: _isLoading ? null : _login,
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Login'),
               ),
 
               TextButton(
                 key: const Key('register_navigation_button'),
-                onPressed: () {
-                  Navigator.of(context).pushNamed(RegisterScreen.id);
-                },
+                onPressed: _isLoading
+                    ? null
+                    : () {
+                        Navigator.of(context).pushNamed(
+                          RegisterScreen.id,
+                        );
+                      },
                 child: const Text("Don't have an Account?"),
               ),
 
               TextButton(
                 key: const Key('forgot_password_button'),
-                onPressed: () {
-                  Navigator.of(context).pushNamed(ForgotPasswordScreen.id);
-                },
+                onPressed: _isLoading
+                    ? null
+                    : () {
+                        Navigator.of(context).pushNamed(
+                          ForgotPasswordScreen.id,
+                        );
+                      },
                 child: const Text('Forget Password'),
               ),
             ],
@@ -114,39 +144,90 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // Firebase authentication is intentionally skipped
-    // when auth is not supplied. This allows pure widget
-    // and validation testing without Firebase initialization.
-    if (widget.auth == null) {
+    final auth = widget.auth;
+
+    if (auth == null) {
+      _showError('FirebaseAuth is not configured');
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
-      final result = await widget.auth!.signInWithEmailAndPassword(
-        email: _emailController.text,
+      // ------------------------------------------------------------
+      // 1. Firebase login
+      // ------------------------------------------------------------
+
+      final result = await auth.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
       final user = result.user;
 
-      if (user == null) {
+      if (user == null ||
+          user.email == null ||
+          user.email!.trim().isEmpty) {
         _showError('Login failed');
         return;
       }
 
-      await GetStorage().write('token', user.uid);
+      // ------------------------------------------------------------
+      // 2. Normalize email
+      // ------------------------------------------------------------
 
-      await GetStorage().write('email', user.email);
+      final email = user.email!.trim().toLowerCase();
+
+      // ------------------------------------------------------------
+      // 3. Save authenticated user
+      // ------------------------------------------------------------
+
+      final storage = GetStorage();
+
+      await storage.write('token', user.uid);
+      await storage.write('email', email);
+
+      // ------------------------------------------------------------
+      // 4. IMPORTANT
+      //
+      // setupLocator() must:
+      //   - use this email
+      //   - open tasks_<email>
+      //   - register HiveTaskDataSource(email)
+      //   - register SyncQueue
+      //   - register other user-specific dependencies
+      // ------------------------------------------------------------
+
+      await setupUserLocator(email);
 
       if (!mounted) {
         return;
       }
 
-      Navigator.pushReplacementNamed(context, TabsScreen.id);
+      // ------------------------------------------------------------
+      // 5. Navigate only AFTER user-specific dependencies are ready
+      // ------------------------------------------------------------
+
+      Navigator.pushReplacementNamed(
+        context,
+        TabsScreen.id,
+      );
     } on FirebaseAuthException catch (error) {
-      _showError(error.message ?? 'Login failed');
+      _showError(
+        error.message ?? 'Login failed',
+      );
     } catch (error) {
-      _showError(error.toString());
+      _showError(
+        error.toString(),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -159,10 +240,15 @@ class _LoginScreenState extends State<LoginScreen> {
       SnackBar(
         content: Text(
           'Error $message',
-          style: const TextStyle(color: Colors.red),
+          style: const TextStyle(
+            color: Colors.red,
+          ),
         ),
-        duration: const Duration(milliseconds: 2000),
+        duration: const Duration(
+          milliseconds: 2000,
+        ),
       ),
     );
   }
 }
+

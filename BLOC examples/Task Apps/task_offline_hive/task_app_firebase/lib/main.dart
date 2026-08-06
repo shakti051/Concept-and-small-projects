@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
@@ -35,8 +36,7 @@ import 'package:workmanager/workmanager.dart';
 //Disconnect the USB cable.
 //adb connect 192.168.1.33:5555
 
-
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
@@ -51,8 +51,8 @@ void main() async {
       await Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
     }
 
-    debugPrint("3 GetIt");
-    await setupLocator();
+   // debugPrint("3 GetIt");
+    //await setupLocator();
 
     debugPrint("4 Hive");
     await Hive.initFlutter();
@@ -67,7 +67,7 @@ void main() async {
 
     // Hive.registerAdapter(SyncStatusAdapter());
 
-    await Hive.openBox<Task>(HiveBoxes.tasks);
+ //   await Hive.openBox<Task>(HiveBoxes.tasks);
 
     debugPrint("5 Register Worker");
 
@@ -106,17 +106,7 @@ class MyApp extends StatelessWidget {
           create: (_) =>
               ConnectivityBloc(Connectivity())..add(ObserveConnectivity()),
         ),
-        BlocProvider(
-          create: (context) => TasksBloc(
-            context.read<ConnectivityBloc>(),
-            getIt<TaskRepository>(),
-            getIt<SyncQueue>(),
-            getIt<LoggerService>(),
-            getIt<SyncScheduler>(),
-            getIt<RetryScheduler>(),
-            getIt<SyncService>(),
-          ),
-        ),
+        
         BlocProvider(create: (context) => SwitchBloc()),
       ],
       child: BlocBuilder<SwitchBloc, SwitchState>(
@@ -129,9 +119,9 @@ class MyApp extends StatelessWidget {
             theme: state.switchValue
                 ? AppThemes.appThemeData[AppTheme.darkTheme]
                 : AppThemes.appThemeData[AppTheme.lightTheme],
-            builder: (context, child) {
-              return ConnectivityListener(child: child!);
-            },
+            // builder: (context, child) {
+            //   return ConnectivityListener(child: child!);
+            // },
             home: SplashScreen(), //const TabsScreen(),
             onGenerateRoute: appRouter.onGenerateRoute,
           );

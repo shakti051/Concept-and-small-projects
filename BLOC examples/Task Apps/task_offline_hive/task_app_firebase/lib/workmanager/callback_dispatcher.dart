@@ -1,42 +1,72 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/widgets.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:task_app_firebase/firebase_options.dart';
-import 'package:workmanager/workmanager.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:get_storage/get_storage.dart';
-
-import '../constants/hive_boxes.dart';
-import '../models/task.dart';
-import '../data/local/hive_task_datasource.dart';
-import '../respository/task_repository.dart';
-import '../services/sync_service.dart';
-
-
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:task_app_firebase/constants/hive_boxes.dart';
+import 'package:task_app_firebase/data/local/hive_task_datasource.dart';
+import 'package:task_app_firebase/firebase_options.dart';
+import 'package:task_app_firebase/models/task.dart';
+import 'package:task_app_firebase/respository/task_repository.dart';
+import 'package:task_app_firebase/services/sync_service.dart';
+import 'package:workmanager/workmanager.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
-    print("WORKER STARTED: $taskName");
+    debugPrint("========================================");
+    debugPrint("WORKER STARTED: $taskName");
+    debugPrint("========================================");
 
     WidgetsFlutterBinding.ensureInitialized();
 
     try {
-      print("Firebase init started");
+      // ------------------------------------------------------------
+      // 1. Get logged-in user's email
+      // ------------------------------------------------------------
+
+      final email = inputData?['email'] as String?;
+
+      if (email == null || email.trim().isEmpty) {
+        debugPrint("WORKER ERROR: email missing");
+        return false;
+      }
+
+      final normalizedEmail = email.trim().toLowerCase();
+
+      debugPrint("SYNC USER: $normalizedEmail");
+
+      // ------------------------------------------------------------
+      // 2. Initialize Firebase
+      // ------------------------------------------------------------
 
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
 
-      print("Firebase initialized");
+      debugPrint("Firebase initialized");
+
+      // ------------------------------------------------------------
+      // 3. Initialize GetStorage
+      // ------------------------------------------------------------
 
       await GetStorage.init();
 
-      print("GetStorage initialized");
+      debugPrint("GetStorage initialized");
+
+      // ------------------------------------------------------------
+      // 4. Initialize Hive
+      // ------------------------------------------------------------
 
       final dir = await getApplicationDocumentsDirectory();
 
-      Hive.init(dir.path);
+      if (!Hive.isBoxOpen(HiveBoxes.tasks(normalizedEmail))) {
+        Hive.init(dir.path);
+      }
+
+      // ------------------------------------------------------------
+      // 5. Register Hive adapters
+      // ------------------------------------------------------------
 
       if (!Hive.isAdapterRegistered(0)) {
         Hive.registerAdapter(SyncStatusAdapter());
@@ -46,28 +76,54 @@ void callbackDispatcher() {
         Hive.registerAdapter(TaskAdapter());
       }
 
-      print("Hive initialized");
+      // ------------------------------------------------------------
+      // 6. Open user's own Hive box
+      // ------------------------------------------------------------
 
-      await Hive.openBox<Task>(HiveBoxes.tasks);
+      final boxName = HiveBoxes.tasks(normalizedEmail);
 
-      print("Hive box opened");
+      debugPrint("Opening Hive box: $boxName");
 
-      final repository = TaskRepository(HiveTaskDataSource());
+      if (!Hive.isBoxOpen(boxName)) {
+        await Hive.openBox<Task>(boxName);
+      }
+
+      debugPrint("Hive box opened: $boxName");
+
+      // ------------------------------------------------------------
+      // 7. Create repository using SAME user email
+      // ------------------------------------------------------------
+
+      final repository = TaskRepository(
+        HiveTaskDataSource(normalizedEmail),
+      );
+
+      // ------------------------------------------------------------
+      // 8. Read ONLY this user's local tasks
+      // ------------------------------------------------------------
 
       final tasks = await repository.getAll();
 
-      print("LOCAL TASK COUNT: ${tasks.length}");
+      debugPrint(
+        "LOCAL TASK COUNT for $normalizedEmail: ${tasks.length}",
+      );
+
+      // ------------------------------------------------------------
+      // 9. Sync ONLY this user's tasks
+      // ------------------------------------------------------------
 
       final syncService = SyncService(repository);
 
       await syncService.sync(tasks);
 
-      print("SYNC COMPLETED");
+      debugPrint("SYNC COMPLETED for $normalizedEmail");
 
       return true;
     } catch (e, stack) {
-      print("WORKER ERROR: $e");
-      print(stack.toString());
+      debugPrint("========================================");
+      debugPrint("WORKER ERROR: $e");
+      debugPrint(stack.toString());
+      debugPrint("========================================");
 
       return false;
     }

@@ -12,4 +12,9 @@ class SyncQueue {
       sync,
     );
   }
+
+  void dispose() {
+    _timer?.cancel();
+    _timer = null;
+  }
 }
