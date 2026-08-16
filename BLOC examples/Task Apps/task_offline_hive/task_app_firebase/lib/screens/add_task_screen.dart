@@ -35,6 +35,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 10, bottom: 10),
             child: TextField(
+              key: const Key('add_task_title_field'),
               autofocus: true,
               controller: titleController,
               decoration: const InputDecoration(
@@ -44,6 +45,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
           ),
           TextField(
+            key: const Key('add_task_description_field'),
             controller: descriptionController,
             minLines: 3,
             maxLines: 5,
@@ -60,6 +62,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
+                key: const Key('add_task_button_submit'),
                 onPressed: () {
                   final title = titleController.text.trim();
                   final description = descriptionController.text.trim();

@@ -39,7 +39,7 @@ void main() {
       isDeleted: false,
       isFavorite: false,
       syncStatus: SyncStatus.synced,
-      lastModified: DateTime.utc(2026, 7, 30, 10),
+      lastModified: DateTime.utc(2026, 7, 30, 10), ownerId: 'test-owner-1',
     );
   }
 

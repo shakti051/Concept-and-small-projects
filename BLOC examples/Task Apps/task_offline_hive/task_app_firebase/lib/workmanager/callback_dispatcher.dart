@@ -14,45 +14,57 @@ import 'package:workmanager/workmanager.dart';
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
-    debugPrint("========================================");
-    debugPrint("WORKER STARTED: $taskName");
-    debugPrint("========================================");
+    debugPrint('========================================');
+    debugPrint('WORKER STARTED: $taskName');
+    debugPrint('========================================');
 
     WidgetsFlutterBinding.ensureInitialized();
 
     try {
       // ------------------------------------------------------------
-      // 1. Get logged-in user's email
+      // 1. Initialize GetStorage first
       // ------------------------------------------------------------
 
-      final email = inputData?['email'] as String?;
+      await GetStorage.init();
+
+      debugPrint('GetStorage initialized');
+
+      // ------------------------------------------------------------
+      // 2. Get logged-in user's email
+      //
+      // Priority:
+      //    inputData['email']
+      //    ↓
+      //    GetStorage().read('email')
+      //
+      // This allows the worker to work even when the task was
+      // registered without inputData.
+      // ------------------------------------------------------------
+
+      final inputEmail = inputData?['email'] as String?;
+
+      final storedEmail = GetStorage().read<String>('email');
+
+      final email = inputEmail ?? storedEmail;
 
       if (email == null || email.trim().isEmpty) {
-        debugPrint("WORKER ERROR: email missing");
+        debugPrint('WORKER ERROR: email missing');
         return false;
       }
 
       final normalizedEmail = email.trim().toLowerCase();
 
-      debugPrint("SYNC USER: $normalizedEmail");
+      debugPrint('SYNC USER: $normalizedEmail');
 
       // ------------------------------------------------------------
-      // 2. Initialize Firebase
+      // 3. Initialize Firebase
       // ------------------------------------------------------------
 
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
 
-      debugPrint("Firebase initialized");
-
-      // ------------------------------------------------------------
-      // 3. Initialize GetStorage
-      // ------------------------------------------------------------
-
-      await GetStorage.init();
-
-      debugPrint("GetStorage initialized");
+      debugPrint('Firebase initialized');
 
       // ------------------------------------------------------------
       // 4. Initialize Hive
@@ -61,7 +73,12 @@ void callbackDispatcher() {
       final dir = await getApplicationDocumentsDirectory();
 
       if (!Hive.isBoxOpen(HiveBoxes.tasks(normalizedEmail))) {
-        Hive.init(dir.path);
+        if (!Hive.isAdapterRegistered(0) ||
+            !Hive.isAdapterRegistered(1)) {
+          Hive.init(dir.path);
+        } else if (!Hive.isBoxOpen(HiveBoxes.tasks(normalizedEmail))) {
+          Hive.init(dir.path);
+        }
       }
 
       // ------------------------------------------------------------
@@ -82,16 +99,16 @@ void callbackDispatcher() {
 
       final boxName = HiveBoxes.tasks(normalizedEmail);
 
-      debugPrint("Opening Hive box: $boxName");
+      debugPrint('Opening Hive box: $boxName');
 
       if (!Hive.isBoxOpen(boxName)) {
         await Hive.openBox<Task>(boxName);
       }
 
-      debugPrint("Hive box opened: $boxName");
+      debugPrint('Hive box opened: $boxName');
 
       // ------------------------------------------------------------
-      // 7. Create repository using SAME user email
+      // 7. Create repository using the SAME user's email
       // ------------------------------------------------------------
 
       final repository = TaskRepository(
@@ -105,7 +122,7 @@ void callbackDispatcher() {
       final tasks = await repository.getAll();
 
       debugPrint(
-        "LOCAL TASK COUNT for $normalizedEmail: ${tasks.length}",
+        'LOCAL TASK COUNT for $normalizedEmail: ${tasks.length}',
       );
 
       // ------------------------------------------------------------
@@ -116,14 +133,14 @@ void callbackDispatcher() {
 
       await syncService.sync(tasks);
 
-      debugPrint("SYNC COMPLETED for $normalizedEmail");
+      debugPrint('SYNC COMPLETED for $normalizedEmail');
 
       return true;
     } catch (e, stack) {
-      debugPrint("========================================");
-      debugPrint("WORKER ERROR: $e");
+      debugPrint('========================================');
+      debugPrint('WORKER ERROR: $e');
       debugPrint(stack.toString());
-      debugPrint("========================================");
+      debugPrint('========================================');
 
       return false;
     }

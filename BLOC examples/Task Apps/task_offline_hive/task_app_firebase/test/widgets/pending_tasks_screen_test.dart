@@ -26,6 +26,7 @@ void main() {
   Task createTask({
     String id = 'task-1',
     String title = 'Test Task',
+    String ownerId = 'test-owner-1',
     bool isDone = false,
     bool isDeleted = false,
     bool isFavorite = false,
@@ -33,6 +34,7 @@ void main() {
     return Task(
       id: id,
       title: title,
+      ownerId: ownerId,
       description: 'Test Description',
       date: '2026-07-30',
       isDone: isDone,

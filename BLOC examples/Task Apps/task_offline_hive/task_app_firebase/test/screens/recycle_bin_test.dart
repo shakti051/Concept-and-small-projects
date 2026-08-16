@@ -20,6 +20,7 @@ void main() {
   Task createTask({
     String id = 'task-1',
     String title = 'Deleted Task',
+    String ownerId = 'test-owner-1',
     String description = 'Deleted Description',
     bool isDone = false,
     bool isDeleted = true,
@@ -29,6 +30,7 @@ void main() {
     return Task(
       id: id,
       title: title,
+      ownerId: ownerId,
       description: description,
       date: '2026-07-30',
       isDone: isDone,

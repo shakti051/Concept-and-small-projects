@@ -17,44 +17,25 @@ void main() {
     });
 
     test('total should return uploaded + updated + deleted', () {
-      final report = SyncReport(
-        uploaded: 3,
-        updated: 2,
-        deleted: 1,
-      );
+      final report = SyncReport(uploaded: 3, updated: 2, deleted: 1);
 
       expect(report.total, 6);
     });
 
     test('total should not include failed operations', () {
-      final report = SyncReport(
-        uploaded: 3,
-        updated: 2,
-        deleted: 1,
-        failed: 5,
-      );
+      final report = SyncReport(uploaded: 3, updated: 2, deleted: 1, failed: 5);
 
       expect(report.total, 6);
     });
 
     test('hasFailures should return false when failed is zero', () {
-      final report = SyncReport(
-        uploaded: 2,
-        updated: 1,
-        deleted: 1,
-        failed: 0,
-      );
+      final report = SyncReport(uploaded: 2, updated: 1, deleted: 1, failed: 0);
 
       expect(report.hasFailures, false);
     });
 
     test('hasFailures should return true when failed is greater than zero', () {
-      final report = SyncReport(
-        uploaded: 2,
-        updated: 1,
-        deleted: 1,
-        failed: 1,
-      );
+      final report = SyncReport(uploaded: 2, updated: 1, deleted: 1, failed: 1);
 
       expect(report.hasFailures, true);
     });
@@ -70,12 +51,10 @@ void main() {
         isFavorite: false,
         syncStatus: SyncStatus.synced,
         lastModified: DateTime(2026, 7, 30),
+        ownerId: 'test-owner-1',
       );
 
-      final report = SyncReport(
-        tasks: [task],
-        uploaded: 1,
-      );
+      final report = SyncReport(tasks: [task], uploaded: 1);
 
       expect(report.tasks.length, 1);
       expect(report.tasks.first, task);

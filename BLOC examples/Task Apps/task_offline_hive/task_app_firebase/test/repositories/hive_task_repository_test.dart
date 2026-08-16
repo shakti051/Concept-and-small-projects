@@ -10,316 +10,261 @@ class MockHiveTaskDataSource extends Mock implements HiveTaskDataSource {}
 class FakeTask extends Fake implements Task {}
 
 void main() {
-late MockHiveTaskDataSource hive;
-late TaskRepository repository;
+  late MockHiveTaskDataSource hive;
+  late TaskRepository repository;
+
+  late Task task1;
+  late Task task2;
+  late List<Task> tasks;
+
+  Task createTask({
+    String id = 'task-1',
+    String title = 'Task 1',
+    bool isDone = false,
+    bool isDeleted = false,
+    bool isFavorite = false,
+    SyncStatus syncStatus = SyncStatus.synced,
+    DateTime? lastModified,
+  }) {
+    return Task(
+      id: id,
+      title: title,
+      description: 'Test Description',
+      date: '2026-07-30',
+      isDone: isDone,
+      isDeleted: isDeleted,
+      isFavorite: isFavorite,
+      syncStatus: syncStatus,
+      lastModified: lastModified ?? DateTime(2026, 7, 30, 10, 0),
+      ownerId: 'test-owner-1',
+    );
+  }
+
+  setUpAll(() {
+    registerFallbackValue(FakeTask());
+  });
+
+  setUp(() {
+    hive = MockHiveTaskDataSource();
+    repository = TaskRepository(hive);
+
+    task1 = createTask(id: 'task-1', title: 'Task 1');
+
+    task2 = createTask(
+      id: 'task-2',
+      title: 'Task 2',
+      lastModified: DateTime(2026, 7, 30, 11, 0),
+    );
+
+    tasks = [task1, task2];
+  });
 
-late Task task1;
-late Task task2;
-late List<Task> tasks;
+  // ============================================================
+  // CREATE
+  // ============================================================
 
-Task createTask({
-String id = 'task-1',
-String title = 'Task 1',
-bool isDone = false,
-bool isDeleted = false,
-bool isFavorite = false,
-SyncStatus syncStatus = SyncStatus.synced,
-DateTime? lastModified,
-}) {
-return Task(
-id: id,
-title: title,
-description: 'Test Description',
-date: '2026-07-30',
-isDone: isDone,
-isDeleted: isDeleted,
-isFavorite: isFavorite,
-syncStatus: syncStatus,
-lastModified: lastModified ?? DateTime(2026, 7, 30, 10, 0),
-);
-}
+  test('create delegates to hive.addTask', () async {
+    when(() => hive.addTask(any())).thenAnswer((_) async {});
 
-setUpAll(() {
-registerFallbackValue(FakeTask());
-});
+    await repository.create(task1);
 
-setUp(() {
-hive = MockHiveTaskDataSource();
-repository = TaskRepository(hive);
+    verify(() => hive.addTask(task1)).called(1);
+  });
 
+  // ============================================================
+  // CREATE - EXCEPTION
+  // ============================================================
 
-task1 = createTask(
-  id: 'task-1',
-  title: 'Task 1',
-);
+  test('create propagates LocalDatabaseException', () async {
+    when(() => hive.addTask(any())).thenThrow(const LocalDatabaseException());
 
-task2 = createTask(
-  id: 'task-2',
-  title: 'Task 2',
-  lastModified: DateTime(2026, 7, 30, 11, 0),
-);
+    expect(
+      () => repository.create(task1),
+      throwsA(isA<LocalDatabaseException>()),
+    );
 
-tasks = [task1, task2];
+    verify(() => hive.addTask(task1)).called(1);
+  });
 
+  // ============================================================
+  // UPDATE
+  // ============================================================
 
-});
+  test('update delegates to hive.updateTask', () async {
+    when(() => hive.updateTask(any())).thenAnswer((_) async {});
 
-// ============================================================
-// CREATE
-// ============================================================
+    await repository.update(task1);
 
-test('create delegates to hive.addTask', () async {
-when(() => hive.addTask(any())).thenAnswer((_) async {});
+    verify(() => hive.updateTask(task1)).called(1);
+  });
 
+  // ============================================================
+  // UPDATE - EXCEPTION
+  // ============================================================
 
-await repository.create(task1);
+  test('update propagates LocalDatabaseException', () async {
+    when(
+      () => hive.updateTask(any()),
+    ).thenThrow(const LocalDatabaseException());
 
-verify(() => hive.addTask(task1)).called(1);
+    expect(
+      () => repository.update(task1),
+      throwsA(isA<LocalDatabaseException>()),
+    );
 
+    verify(() => hive.updateTask(task1)).called(1);
+  });
 
-});
+  // ============================================================
+  // DELETE
+  // ============================================================
 
-// ============================================================
-// CREATE - EXCEPTION
-// ============================================================
+  test('delete delegates to hive.deleteTask with task id', () async {
+    when(() => hive.deleteTask(any())).thenAnswer((_) async {});
 
-test('create propagates LocalDatabaseException', () async {
-when(
-() => hive.addTask(any()),
-).thenThrow(const LocalDatabaseException());
+    await repository.delete(task1);
 
+    verify(() => hive.deleteTask(task1.id)).called(1);
+  });
 
-expect(
-  () => repository.create(task1),
-  throwsA(isA<LocalDatabaseException>()),
-);
+  // ============================================================
+  // DELETE - EXCEPTION
+  // ============================================================
 
-verify(() => hive.addTask(task1)).called(1);
+  test('delete propagates LocalDatabaseException', () async {
+    when(
+      () => hive.deleteTask(any()),
+    ).thenThrow(const LocalDatabaseException());
 
+    expect(
+      () => repository.delete(task1),
+      throwsA(isA<LocalDatabaseException>()),
+    );
 
-});
+    verify(() => hive.deleteTask(task1.id)).called(1);
+  });
 
-// ============================================================
-// UPDATE
-// ============================================================
+  // ============================================================
+  // GET ALL
+  // ============================================================
 
-test('update delegates to hive.updateTask', () async {
-when(() => hive.updateTask(any())).thenAnswer((_) async {});
+  test('getAll delegates to hive.getAllTasks', () async {
+    when(() => hive.getAllTasks()).thenReturn(tasks);
 
+    final result = await repository.getAll();
 
-await repository.update(task1);
+    expect(result, tasks);
 
-verify(() => hive.updateTask(task1)).called(1);
+    verify(() => hive.getAllTasks()).called(1);
+  });
 
+  // ============================================================
+  // GET ALL - EMPTY
+  // ============================================================
 
-});
+  test('getAll returns empty list when hive is empty', () async {
+    when(() => hive.getAllTasks()).thenReturn([]);
 
-// ============================================================
-// UPDATE - EXCEPTION
-// ============================================================
+    final result = await repository.getAll();
 
-test('update propagates LocalDatabaseException', () async {
-when(
-() => hive.updateTask(any()),
-).thenThrow(const LocalDatabaseException());
+    expect(result, isEmpty);
 
+    verify(() => hive.getAllTasks()).called(1);
+  });
 
-expect(
-  () => repository.update(task1),
-  throwsA(isA<LocalDatabaseException>()),
-);
+  // ============================================================
+  // UPSERT ALL
+  // ============================================================
 
-verify(() => hive.updateTask(task1)).called(1);
+  test('upsertAll delegates to hive.upsertAll', () async {
+    when(() => hive.upsertAll(any())).thenAnswer((_) async {});
 
+    await repository.upsertAll(tasks);
 
-});
+    verify(() => hive.upsertAll(tasks)).called(1);
+  });
 
-// ============================================================
-// DELETE
-// ============================================================
+  // ============================================================
+  // UPSERT ALL - EMPTY
+  // ============================================================
 
-test('delete delegates to hive.deleteTask with task id', () async {
-when(() => hive.deleteTask(any())).thenAnswer((_) async {});
+  test('upsertAll accepts empty list', () async {
+    when(() => hive.upsertAll(any())).thenAnswer((_) async {});
 
+    await repository.upsertAll([]);
 
-await repository.delete(task1);
+    verify(() => hive.upsertAll([])).called(1);
+  });
 
-verify(() => hive.deleteTask(task1.id)).called(1);
+  // ============================================================
+  // CREATE ALL
+  // ============================================================
 
+  test('createAll delegates to hive.createAll', () async {
+    when(() => hive.createAll(any())).thenAnswer((_) async {});
 
-});
+    await repository.createAll(tasks);
 
-// ============================================================
-// DELETE - EXCEPTION
-// ============================================================
+    verify(() => hive.createAll(tasks)).called(1);
+  });
 
-test('delete propagates LocalDatabaseException', () async {
-when(
-() => hive.deleteTask(any()),
-).thenThrow(const LocalDatabaseException());
+  // ============================================================
+  // CREATE ALL - EMPTY
+  // ============================================================
 
+  test('createAll accepts empty list', () async {
+    when(() => hive.createAll(any())).thenAnswer((_) async {});
 
-expect(
-  () => repository.delete(task1),
-  throwsA(isA<LocalDatabaseException>()),
-);
+    await repository.createAll([]);
 
-verify(() => hive.deleteTask(task1.id)).called(1);
+    verify(() => hive.createAll([])).called(1);
+  });
 
+  // ============================================================
+  // UPDATE ALL
+  // ============================================================
 
-});
+  test('updateAll delegates to hive.updateAll', () async {
+    when(() => hive.updateAll(any())).thenAnswer((_) async {});
 
-// ============================================================
-// GET ALL
-// ============================================================
+    await repository.updateAll(tasks);
 
-test('getAll delegates to hive.getAllTasks', () async {
-when(() => hive.getAllTasks()).thenReturn(tasks);
+    verify(() => hive.updateAll(tasks)).called(1);
+  });
 
+  // ============================================================
+  // UPDATE ALL - EMPTY
+  // ============================================================
 
-final result = await repository.getAll();
+  test('updateAll accepts empty list', () async {
+    when(() => hive.updateAll(any())).thenAnswer((_) async {});
 
-expect(result, tasks);
+    await repository.updateAll([]);
 
-verify(() => hive.getAllTasks()).called(1);
+    verify(() => hive.updateAll([])).called(1);
+  });
 
+  // ============================================================
+  // DELETE ALL
+  // ============================================================
 
-});
+  test('deleteAll delegates to hive.deleteAll', () async {
+    when(() => hive.deleteAll(any())).thenAnswer((_) async {});
 
-// ============================================================
-// GET ALL - EMPTY
-// ============================================================
+    await repository.deleteAll(tasks);
 
-test('getAll returns empty list when hive is empty', () async {
-when(() => hive.getAllTasks()).thenReturn([]);
+    verify(() => hive.deleteAll(tasks)).called(1);
+  });
 
+  // ============================================================
+  // DELETE ALL - EMPTY
+  // ============================================================
 
-final result = await repository.getAll();
+  test('deleteAll accepts empty list', () async {
+    when(() => hive.deleteAll(any())).thenAnswer((_) async {});
 
-expect(result, isEmpty);
+    await repository.deleteAll([]);
 
-verify(() => hive.getAllTasks()).called(1);
-
-
-});
-
-// ============================================================
-// UPSERT ALL
-// ============================================================
-
-test('upsertAll delegates to hive.upsertAll', () async {
-when(() => hive.upsertAll(any())).thenAnswer((_) async {});
-
-
-await repository.upsertAll(tasks);
-
-verify(() => hive.upsertAll(tasks)).called(1);
-
-
-});
-
-// ============================================================
-// UPSERT ALL - EMPTY
-// ============================================================
-
-test('upsertAll accepts empty list', () async {
-when(() => hive.upsertAll(any())).thenAnswer((_) async {});
-
-
-await repository.upsertAll([]);
-
-verify(() => hive.upsertAll([])).called(1);
-
-
-});
-
-// ============================================================
-// CREATE ALL
-// ============================================================
-
-test('createAll delegates to hive.createAll', () async {
-when(() => hive.createAll(any())).thenAnswer((_) async {});
-
-
-await repository.createAll(tasks);
-
-verify(() => hive.createAll(tasks)).called(1);
-
-
-});
-
-// ============================================================
-// CREATE ALL - EMPTY
-// ============================================================
-
-test('createAll accepts empty list', () async {
-when(() => hive.createAll(any())).thenAnswer((_) async {});
-
-
-await repository.createAll([]);
-
-verify(() => hive.createAll([])).called(1);
-
-
-});
-
-// ============================================================
-// UPDATE ALL
-// ============================================================
-
-test('updateAll delegates to hive.updateAll', () async {
-when(() => hive.updateAll(any())).thenAnswer((_) async {});
-
-
-await repository.updateAll(tasks);
-
-verify(() => hive.updateAll(tasks)).called(1);
-
-
-});
-
-// ============================================================
-// UPDATE ALL - EMPTY
-// ============================================================
-
-test('updateAll accepts empty list', () async {
-when(() => hive.updateAll(any())).thenAnswer((_) async {});
-
-
-await repository.updateAll([]);
-
-verify(() => hive.updateAll([])).called(1);
-
-
-});
-
-// ============================================================
-// DELETE ALL
-// ============================================================
-
-test('deleteAll delegates to hive.deleteAll', () async {
-when(() => hive.deleteAll(any())).thenAnswer((_) async {});
-
-
-await repository.deleteAll(tasks);
-
-verify(() => hive.deleteAll(tasks)).called(1);
-
-
-});
-
-// ============================================================
-// DELETE ALL - EMPTY
-// ============================================================
-
-test('deleteAll accepts empty list', () async {
-when(() => hive.deleteAll(any())).thenAnswer((_) async {});
-
-
-await repository.deleteAll([]);
-
-verify(() => hive.deleteAll([])).called(1);
-
-
-});
+    verify(() => hive.deleteAll([])).called(1);
+  });
 }

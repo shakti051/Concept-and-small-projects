@@ -3,7 +3,7 @@ import 'dart:io';
 void main() {
   //  List<int> result = findDuplicate([1,2,3,3,4,4,5]);
   //  print(result);
-  stdout.write("Enter numbers separated by comman: ");
+  stdout.write("Enter numbers separated by space: ");
   String? input = stdin.readLineSync();
   List<int> nums = input!.split(" ").map((e) => int.parse(e)).toList();
   var duplicate = findDuplicate(nums);

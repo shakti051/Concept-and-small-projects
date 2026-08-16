@@ -27,7 +27,7 @@ void main() {
         isDeleted: false,
         isFavorite: false,
         syncStatus: SyncStatus.synced,
-        lastModified: lastModified,
+        lastModified: lastModified, ownerId: 'test-owner-1'
       );
     }
 
@@ -51,7 +51,7 @@ void main() {
         description: 'Description',
         id: '1',
         date: '2026-07-30',
-        lastModified: lastModified,
+        lastModified: lastModified, ownerId: 'test-owner-1',
       );
 
       expect(task.isDone, false);

@@ -1,17 +1,25 @@
 import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:task_app_firebase/constants/hive_boxes.dart';
 import 'package:task_app_firebase/data/local/hive_task_datasource.dart';
 import 'package:task_app_firebase/models/task.dart';
 
-
 late Directory testDirectory;
 
 void main() {
   late HiveTaskDataSource dataSource;
   late Box<Task> box;
-  //late Directory testDirectory;
+
+  const testEmail = 'test@example.com';
+
+  final boxName = HiveBoxes.tasks(testEmail);
+
+  // ============================================================
+  // Hive initialization
+  // ============================================================
+
   setUpAll(() async {
     testDirectory = await Directory.systemTemp.createTemp(
       'task_app_hive_test_',
@@ -27,20 +35,28 @@ void main() {
       Hive.registerAdapter(TaskAdapter());
     }
 
-    await Hive.openBox<Task>(HiveBoxes.tasks);
+    if (!Hive.isBoxOpen(boxName)) {
+      await Hive.openBox<Task>(boxName);
+    }
+
+    box = Hive.box<Task>(boxName);
   });
 
+  // ============================================================
+  // Test Task factory
+  // ============================================================
 
-  
   Task createTask({
     required String id,
     required String title,
+    String ownerId = 'test-owner-1',
     DateTime? lastModified,
     SyncStatus syncStatus = SyncStatus.synced,
   }) {
     return Task(
       id: id,
       title: title,
+      ownerId: ownerId,
       description: 'Description $id',
       date: '2026-07-30',
       isDone: false,
@@ -51,27 +67,14 @@ void main() {
     );
   }
 
-  setUpAll(() async {
-    testDirectory = await Directory.systemTemp.createTemp(
-      'task_app_hive_test_',
-    );
-
-    Hive.init(testDirectory.path);
-
-    if (!Hive.isAdapterRegistered(0)) {
-      Hive.registerAdapter(SyncStatusAdapter());
-    }
-
-    if (!Hive.isAdapterRegistered(1)) {
-      Hive.registerAdapter(TaskAdapter());
-    }
-
-    box = await Hive.openBox<Task>(HiveBoxes.tasks);
-  });
+  // ============================================================
+  // Setup / teardown
+  // ============================================================
 
   setUp(() async {
     await box.clear();
-    dataSource = HiveTaskDataSource();
+
+    dataSource = HiveTaskDataSource(testEmail);
   });
 
   tearDown(() async {
@@ -79,16 +82,25 @@ void main() {
   });
 
   tearDownAll(() async {
-    await box.close();
+    if (box.isOpen) {
+      await box.close();
+    }
 
     if (testDirectory.existsSync()) {
       await testDirectory.delete(recursive: true);
     }
   });
 
+  // ============================================================
+  // Tests
+  // ============================================================
+
   group('HiveTaskDataSource', () {
     test('addTask should save task to Hive', () async {
-      final task = createTask(id: '1', title: 'Test Task');
+      final task = createTask(
+        id: '1',
+        title: 'Test Task',
+      );
 
       await dataSource.addTask(task);
 
@@ -97,9 +109,15 @@ void main() {
     });
 
     test('updateTask should replace existing task', () async {
-      final oldTask = createTask(id: '1', title: 'Old Title');
+      final oldTask = createTask(
+        id: '1',
+        title: 'Old Title',
+      );
 
-      final updatedTask = createTask(id: '1', title: 'Updated Title');
+      final updatedTask = createTask(
+        id: '1',
+        title: 'Updated Title',
+      );
 
       await dataSource.addTask(oldTask);
       await dataSource.updateTask(updatedTask);
@@ -109,7 +127,10 @@ void main() {
     });
 
     test('deleteTask should remove task from Hive', () async {
-      final task = createTask(id: '1', title: 'Delete Me');
+      final task = createTask(
+        id: '1',
+        title: 'Delete Me',
+      );
 
       await dataSource.addTask(task);
 
@@ -122,9 +143,15 @@ void main() {
     });
 
     test('getAllTasks should return all tasks', () async {
-      final task1 = createTask(id: '1', title: 'Task 1');
+      final task1 = createTask(
+        id: '1',
+        title: 'Task 1',
+      );
 
-      final task2 = createTask(id: '2', title: 'Task 2');
+      final task2 = createTask(
+        id: '2',
+        title: 'Task 2',
+      );
 
       await dataSource.addTask(task1);
       await dataSource.addTask(task2);
@@ -192,15 +219,27 @@ void main() {
     test(
       'upsertAll should update existing tasks and insert new tasks',
       () async {
-        final oldTask = createTask(id: '1', title: 'Old Task');
+        final oldTask = createTask(
+          id: '1',
+          title: 'Old Task',
+        );
 
         await dataSource.addTask(oldTask);
 
-        final updatedTask = createTask(id: '1', title: 'Updated Task');
+        final updatedTask = createTask(
+          id: '1',
+          title: 'Updated Task',
+        );
 
-        final newTask = createTask(id: '2', title: 'New Task');
+        final newTask = createTask(
+          id: '2',
+          title: 'New Task',
+        );
 
-        await dataSource.upsertAll([updatedTask, newTask]);
+        await dataSource.upsertAll([
+          updatedTask,
+          newTask,
+        ]);
 
         expect(box.length, 2);
         expect(box.get('1'), equals(updatedTask));
@@ -250,7 +289,10 @@ void main() {
 
       await dataSource.createAll(tasks);
 
-      await dataSource.deleteAll([tasks[0], tasks[2]]);
+      await dataSource.deleteAll([
+        tasks[0],
+        tasks[2],
+      ]);
 
       expect(box.length, 1);
       expect(box.containsKey('1'), isFalse);

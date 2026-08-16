@@ -17,18 +17,9 @@ class TabsScreen extends StatefulWidget {
 class _TabsScreenState extends State<TabsScreen>
     with SingleTickerProviderStateMixin {
   final List<Map<String, dynamic>> _pageDetails = [
-    {
-      'pageName': const PendingTasksScreen(),
-      'title': 'Pending Tasks',
-    },
-    {
-      'pageName': const CompletedTasksScreen(),
-      'title': 'Completed Tasks',
-    },
-    {
-      'pageName': const FavoriteTasksScreen(),
-      'title': 'Favorite Tasks',
-    },
+    {'pageName': const PendingTasksScreen(), 'title': 'Pending Tasks'},
+    {'pageName': const CompletedTasksScreen(), 'title': 'Completed Tasks'},
+    {'pageName': const FavoriteTasksScreen(), 'title': 'Favorite Tasks'},
   ];
 
   var _selectedPageIndex = 0;
@@ -54,17 +45,22 @@ class _TabsScreenState extends State<TabsScreen>
   }
 
   void _addTask(BuildContext context) {
+    final tasksBloc = context.read<TasksBloc>();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       useSafeArea: true,
-      builder: (context) => SingleChildScrollView(
-        child: Container(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
+      builder: (context) => BlocProvider.value(
+        value: tasksBloc,
+        child: SingleChildScrollView(
+          child: Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: const AddTaskScreen(),
           ),
-          child: const AddTaskScreen(),
         ),
       ),
     );
@@ -80,10 +76,7 @@ class _TabsScreenState extends State<TabsScreen>
     messenger.hideCurrentSnackBar();
 
     messenger.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-      ),
+      SnackBar(content: Text(message), backgroundColor: backgroundColor),
     );
   }
 
@@ -108,8 +101,7 @@ class _TabsScreenState extends State<TabsScreen>
             _showSnackBar(
               context: context,
               message:
-                  state.syncMessage ??
-                  "Sync failed. Will retry automatically.",
+                  state.syncMessage ?? "Sync failed. Will retry automatically.",
               backgroundColor: Colors.red,
             );
             break;
@@ -136,31 +128,21 @@ class _TabsScreenState extends State<TabsScreen>
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(
-              _pageDetails[_selectedPageIndex]['title'],
-            ),
+            title: Text(_pageDetails[_selectedPageIndex]['title']),
             actions: [
               IconButton(
-                tooltip: isSyncing
-                    ? "Syncing..."
-                    : "Sync now",
+                tooltip: isSyncing ? "Syncing..." : "Sync now",
                 onPressed: isSyncing
                     ? null
                     : () {
                         context.read<TasksBloc>().add(
-                              SyncPendingTasks(
-                                isManual: true,
-                              ),
-                            );
+                          SyncPendingTasks(isManual: true),
+                        );
                       },
                 icon: RotationTransition(
                   turns: _syncController,
                   child: const Icon(Icons.sync),
                 ),
-              ),
-              IconButton(
-                onPressed: () => _addTask(context),
-                icon: const Icon(Icons.add),
               ),
             ],
           ),
@@ -189,6 +171,7 @@ class _TabsScreenState extends State<TabsScreen>
             duration: const Duration(milliseconds: 250),
             child: _selectedPageIndex == 0
                 ? FloatingActionButton(
+                    key: const Key('add_task_button'),
                     tooltip: "Add Task",
                     onPressed: () => _addTask(context),
                     child: const Icon(Icons.add),

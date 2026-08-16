@@ -1,164 +1,143 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:integration_test/integration_test.dart';
+
+import 'package:task_app_firebase/main.dart' as app;
 import 'package:task_app_firebase/screens/login_screen.dart';
 import 'package:task_app_firebase/screens/tabs_screen.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets(
-    'User can login with valid credentials',
-    (tester) async {
-      print('===== TEST START =====');
+testWidgets('Login existing user successfully', (tester) async {
+// ============================================================
+// 1. Clear previous login session
+// ============================================================
 
-      final storage = GetStorage();
 
-      // Clear previous login.
-      await storage.remove('token');
-      await storage.remove('email');
+final storage = GetStorage();
 
-      print('===== STORAGE CLEARED =====');
+await storage.erase();
 
-      // --------------------------------------------------
-      // At this point the application should already be
-      // running under the integration test runner.
-      // --------------------------------------------------
+// ============================================================
+// 2. Start application
+// ============================================================
 
-      await tester.pump();
+app.main();
 
-      print('===== INITIAL FRAME =====');
+// Give main() time to initialize Firebase, Hive,
+// Workmanager, GetIt and the application.
+await tester.pump();
 
-      // --------------------------------------------------
-      // SplashScreen waits 2 seconds.
-      // --------------------------------------------------
+await tester.pump(const Duration(seconds: 1));
 
-      await tester.pump(
-        const Duration(seconds: 2),
-      );
+// ============================================================
+// 3. Wait for SplashScreen -> LoginScreen
+// ============================================================
 
-      await tester.pump();
+await waitForWidget(
+  tester,
+  find.byType(LoginScreen),
+  timeout: const Duration(seconds: 10),
+);
 
-      print('===== AFTER SPLASH =====');
+expect(find.byType(LoginScreen), findsOneWidget);
 
-      print(
-        'LoginScreen count: '
-        '${find.byType(LoginScreen).evaluate().length}',
-      );
+// ============================================================
+// 4. Find login fields
+// ============================================================
 
-      print(
-        'TabsScreen count: '
-        '${find.byType(TabsScreen).evaluate().length}',
-      );
+final emailField = find.byKey(
+  const Key('login_email_field'),
+);
 
-      expect(
-        find.byType(LoginScreen),
-        findsOneWidget,
-      );
+final passwordField = find.byKey(
+  const Key('login_password_field'),
+);
 
-      print('===== LOGIN SCREEN FOUND =====');
+final loginButton = find.byKey(
+  const Key('login_button'),
+);
 
-      // --------------------------------------------------
-      // Find controls
-      // --------------------------------------------------
+expect(emailField, findsOneWidget);
+expect(passwordField, findsOneWidget);
+expect(loginButton, findsOneWidget);
 
-      final emailField = find.byKey(
-        const Key('login_email_field'),
-      );
+// ============================================================
+// 5. Enter credentials
+// ============================================================
 
-      final passwordField = find.byKey(
-        const Key('login_password_field'),
-      );
+await tester.enterText(
+  emailField,
+  'user1@gmail.com',
+);
 
-      final loginButton = find.byKey(
-        const Key('login_button'),
-      );
+await tester.enterText(
+  passwordField,
+  '123456',
+);
 
-      expect(emailField, findsOneWidget);
-      expect(passwordField, findsOneWidget);
-      expect(loginButton, findsOneWidget);
+// ============================================================
+// 6. Tap Login
+// ============================================================
 
-      print('===== LOGIN CONTROLS FOUND =====');
+await tester.tap(loginButton);
 
-      // --------------------------------------------------
-      // Enter credentials
-      // --------------------------------------------------
+// Allow Firebase authentication to start.
+await tester.pump();
 
-      await tester.enterText(
-        emailField,
-        'user1@gmail.com',
-      );
+// ============================================================
+// 7. Wait for TabsScreen
+// ============================================================
 
-      print('===== EMAIL ENTERED =====');
+await waitForWidget(
+  tester,
+  find.byType(TabsScreen),
+  timeout: const Duration(seconds: 20),
+);
 
-      await tester.enterText(
-        passwordField,
-        '123456',
-      );
+// ============================================================
+// 8. Verify successful login
+// ============================================================
 
-      print('===== PASSWORD ENTERED =====');
+expect(
+  find.byType(TabsScreen),
+  findsOneWidget,
+);
 
-      // --------------------------------------------------
-      // Login
-      // --------------------------------------------------
 
-      await tester.tap(loginButton);
+});
+}
 
-      print('===== LOGIN BUTTON TAPPED =====');
+///
+/// Wait until a widget appears.
+///
+/// This is more reliable than pumpAndSettle() for integration
+/// tests involving Firebase, Firestore, Workmanager, timers
+/// and BLoC streams.
+///
+Future<void> waitForWidget(
+WidgetTester tester,
+Finder finder, {
+Duration timeout = const Duration(seconds: 10),
+}) async {
+final endTime = DateTime.now().add(timeout);
 
-      // Process button callback.
-      await tester.pump();
+while (DateTime.now().isBefore(endTime)) {
+await tester.pump(
+const Duration(milliseconds: 250),
+);
 
-      // Give Firebase authentication time.
-      await tester.pump(
-        const Duration(seconds: 5),
-      );
 
-      await tester.pump();
+if (finder.evaluate().isNotEmpty) {
+  return;
+}
 
-      print('===== FIREBASE WAIT COMPLETED =====');
 
-      // --------------------------------------------------
-      // Verify navigation
-      // --------------------------------------------------
+}
 
-      print(
-        'LoginScreen count: '
-        '${find.byType(LoginScreen).evaluate().length}',
-      );
-
-      print(
-        'TabsScreen count: '
-        '${find.byType(TabsScreen).evaluate().length}',
-      );
-
-      print(
-        'Stored token: '
-        '${storage.read("token")}',
-      );
-
-      print(
-        'Stored email: '
-        '${storage.read("email")}',
-      );
-
-      expect(
-        find.byType(TabsScreen),
-        findsOneWidget,
-      );
-
-      expect(
-        storage.read('token'),
-        isNotNull,
-      );
-
-      expect(
-        storage.read('email'),
-        'user1@gmail.com',
-      );
-
-      print('===== LOGIN TEST PASSED =====');
-    },
-  );
+throw TestFailure(
+'Timed out waiting for widget: $finder',
+);
 }

@@ -6,7 +6,6 @@ import 'package:task_app_firebase/respository/task_repository.dart';
 
 class MockHiveTaskDataSource extends Mock implements HiveTaskDataSource {}
 
-
 void main() {
   late MockHiveTaskDataSource mockHive;
   late TaskRepository repository;
@@ -28,6 +27,7 @@ void main() {
       isFavorite: false,
       syncStatus: SyncStatus.synced,
       lastModified: DateTime(2026, 7, 30),
+      ownerId: 'test-owner-1',
     );
 
     task2 = Task(
@@ -40,6 +40,7 @@ void main() {
       isFavorite: true,
       syncStatus: SyncStatus.synced,
       lastModified: DateTime(2026, 7, 30),
+      ownerId: 'test-owner-1',
     );
   });
 
@@ -211,10 +212,7 @@ void main() {
 
       when(() => mockHive.addTask(task)).thenThrow(exception);
 
-      expect(
-        () => repository.create(task),
-        throwsA(exception),
-      );
+      expect(() => repository.create(task), throwsA(exception));
 
       verify(() => mockHive.addTask(task)).called(1);
     });
@@ -224,10 +222,7 @@ void main() {
 
       when(() => mockHive.updateTask(task)).thenThrow(exception);
 
-      expect(
-        () => repository.update(task),
-        throwsA(exception),
-      );
+      expect(() => repository.update(task), throwsA(exception));
 
       verify(() => mockHive.updateTask(task)).called(1);
     });
@@ -237,10 +232,7 @@ void main() {
 
       when(() => mockHive.deleteTask(task.id)).thenThrow(exception);
 
-      expect(
-        () => repository.delete(task),
-        throwsA(exception),
-      );
+      expect(() => repository.delete(task), throwsA(exception));
 
       verify(() => mockHive.deleteTask(task.id)).called(1);
     });
@@ -251,10 +243,7 @@ void main() {
 
       when(() => mockHive.upsertAll(tasks)).thenThrow(exception);
 
-      expect(
-        () => repository.upsertAll(tasks),
-        throwsA(exception),
-      );
+      expect(() => repository.upsertAll(tasks), throwsA(exception));
 
       verify(() => mockHive.upsertAll(tasks)).called(1);
     });
@@ -265,10 +254,7 @@ void main() {
 
       when(() => mockHive.createAll(tasks)).thenThrow(exception);
 
-      expect(
-        () => repository.createAll(tasks),
-        throwsA(exception),
-      );
+      expect(() => repository.createAll(tasks), throwsA(exception));
 
       verify(() => mockHive.createAll(tasks)).called(1);
     });
@@ -279,10 +265,7 @@ void main() {
 
       when(() => mockHive.updateAll(tasks)).thenThrow(exception);
 
-      expect(
-        () => repository.updateAll(tasks),
-        throwsA(exception),
-      );
+      expect(() => repository.updateAll(tasks), throwsA(exception));
 
       verify(() => mockHive.updateAll(tasks)).called(1);
     });
@@ -293,10 +276,7 @@ void main() {
 
       when(() => mockHive.deleteAll(tasks)).thenThrow(exception);
 
-      expect(
-        () => repository.deleteAll(tasks),
-        throwsA(exception),
-      );
+      expect(() => repository.deleteAll(tasks), throwsA(exception));
 
       verify(() => mockHive.deleteAll(tasks)).called(1);
     });

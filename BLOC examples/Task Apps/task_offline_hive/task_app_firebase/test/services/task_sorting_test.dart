@@ -6,11 +6,13 @@ void main() {
   Task createTask({
     required String id,
     required String title,
+    String ownerId = 'test-owner-1',
     required DateTime lastModified,
   }) {
     return Task(
       id: id,
       title: title,
+      ownerId: ownerId,
       description: 'Description',
       date: '2026-07-30',
       isDone: false,
