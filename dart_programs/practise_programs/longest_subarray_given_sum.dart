@@ -31,7 +31,5 @@ void main() {
     }
   }
   print(maxLen);
-  for (var i = startIndex; i <= endIndex; i++) {
-    print(arr[i].toString()+",index $i");
-  }
+  print(arr.sublist(startIndex,endIndex+1));
 }
