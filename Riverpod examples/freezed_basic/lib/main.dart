@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'pages/collections_page.dart';
+import 'pages/hotel_list_page.dart';
+import 'pages/method_page.dart';
 import 'pages/mutable_person_page.dart';
 import 'pages/person_page.dart';
 import 'widgets/custom_button.dart';
@@ -43,10 +45,8 @@ class MyHomePage extends StatelessWidget {
             CustomButton(title: 'Person', child: PersonPage()),
             CustomButton(title: 'Mutable Person', child: MutablePersonPage()),
             CustomButton(title: 'Collections', child: CollectionsPage()),
-            // CustomButton(
-            //   title: 'Method',
-            //   child: MethodPage(),
-            // ),
+            CustomButton(title: 'Method', child: MethodPage()),
+            CustomButton(title: 'Hotel List', child: HotelListPage()),
           ],
         ),
       ),
