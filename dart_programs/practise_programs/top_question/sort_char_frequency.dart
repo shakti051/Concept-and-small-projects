@@ -8,15 +8,22 @@ void main() {
 }
 
 String frequencySort(String s) {
-     Map<String, int> freq = {};
+  Map<String, int> freq = {};
 
   for (var ch in s.split('')) {
     freq[ch] = (freq[ch] ?? 0) + 1;
   }
 
   var entries = freq.entries.toList();
+  print(freq.keys.toList());  
+  //entries.sort((a, b) => b.value.compareTo(a.value));
+  entries.sort((a, b) {
+    if (a.value != b.value) {
+      return b.value.compareTo(a.value);
+    }
 
-  entries.sort((a, b) => b.value.compareTo(a.value));
+    return a.key.compareTo(b.key);
+  });
 
   StringBuffer result = StringBuffer();
 
@@ -25,4 +32,4 @@ String frequencySort(String s) {
   }
 
   return result.toString();
-  }
+}
