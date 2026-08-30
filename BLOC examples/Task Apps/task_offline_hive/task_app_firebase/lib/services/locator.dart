@@ -14,6 +14,8 @@ import 'sync_service.dart';
 
 final getIt = GetIt.instance;
 
+
+
 Future<void> setupUserLocator(String email) async {
   final normalizedEmail = email.trim().toLowerCase();
 

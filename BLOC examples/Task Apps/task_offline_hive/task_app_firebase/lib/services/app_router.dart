@@ -3,28 +3,16 @@ import 'package:flutter/material.dart';
 import 'router_exports.dart';
 
 class AppRouter {
-  Route? onGenerateRoute(RouteSettings routeSettings) {
-    switch (routeSettings.name) {
+  Route? onGenerateRoute(RouteSettings settings) {
+    switch (settings.name) {
       case RecycleBin.id:
         return MaterialPageRoute(
-          builder: (context) {
-            return BlocProvider(
-              create: (context) => _createTasksBloc(context),
-              child: const RecycleBin(),
-            );
-          },
+          builder: (_) => const RecycleBin(),
         );
 
       case TabsScreen.id:
         return MaterialPageRoute(
-          builder: (context) {
-            return BlocProvider(
-              create: (context) => _createTasksBloc(context),
-              child: const ConnectivityListener(
-                child: TabsScreen(),
-              ),
-            );
-          },
+          builder: (_) => const TabsScreen(),
         );
 
       case RegisterScreen.id:
@@ -51,17 +39,5 @@ class AppRouter {
       default:
         return null;
     }
-  }
-
-  TasksBloc _createTasksBloc(BuildContext context) {
-    return TasksBloc(
-      context.read<ConnectivityBloc>(),
-      getIt<TaskRepository>(),
-      getIt<SyncQueue>(),
-      getIt<LoggerService>(),
-      getIt<SyncScheduler>(),
-      getIt<RetryScheduler>(),
-      getIt<SyncService>(),
-    );
   }
 }

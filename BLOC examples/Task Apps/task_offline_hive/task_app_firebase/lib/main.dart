@@ -1,3 +1,18 @@
+import 'dart:io';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:task_app_firebase/blocs/connectivity/connectivity_bloc.dart';
+import 'package:task_app_firebase/screens/splash_screen.dart';
+import 'package:task_app_firebase/workmanager/callback_dispatcher.dart';
+import 'blocs/bloc_exports.dart';
+import 'models/task.dart';
+import 'services/app_router.dart';
+import 'services/app_theme.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:workmanager/workmanager.dart';
 
 //flutter pub run build_runner build --delete-conflicting-outputs
 //dart run build_runner build --delete-conflicting-outputs
@@ -6,7 +21,8 @@
 //Disconnect the USB cable.
 //adb connect 192.168.1.33:5555
 
-part of  'main_part_of.dart';
+//part of  'main_part_of.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

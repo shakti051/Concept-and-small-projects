@@ -7,11 +7,11 @@ import 'package:task_app_firebase/screens/register_screen.dart';
 import 'package:task_app_firebase/screens/tabs_screen.dart';
 import 'package:task_app_firebase/services/locator.dart';
 
+import '../blocs/bloc_exports.dart';
+import '../extensions/locater_helper.dart';
+
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({
-    super.key,
-    this.auth,
-  });
+  const LoginScreen({super.key, this.auth});
 
   static const id = 'login_screen';
 
@@ -22,11 +22,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController =
-      TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
-  final TextEditingController _passwordController =
-      TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
 
@@ -42,9 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
+      appBar: AppBar(title: const Text('Login')),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -56,9 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: TextFormField(
                   key: const Key('login_email_field'),
                   controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Insert email',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Insert email'),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -100,9 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ? const SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Text('Login'),
               ),
@@ -112,9 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: _isLoading
                     ? null
                     : () {
-                        Navigator.of(context).pushNamed(
-                          RegisterScreen.id,
-                        );
+                        Navigator.of(context).pushNamed(RegisterScreen.id);
                       },
                 child: const Text("Don't have an Account?"),
               ),
@@ -124,9 +114,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: _isLoading
                     ? null
                     : () {
-                        Navigator.of(context).pushNamed(
-                          ForgotPasswordScreen.id,
-                        );
+                        Navigator.of(
+                          context,
+                        ).pushNamed(ForgotPasswordScreen.id);
                       },
                 child: const Text('Forget Password'),
               ),
@@ -167,9 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final user = result.user;
 
-      if (user == null ||
-          user.email == null ||
-          user.email!.trim().isEmpty) {
+      if (user == null || user.email == null || user.email!.trim().isEmpty) {
         _showError('Login failed');
         return;
       }
@@ -199,29 +187,24 @@ class _LoginScreenState extends State<LoginScreen> {
       //   - register SyncQueue
       //   - register other user-specific dependencies
       // ------------------------------------------------------------
-
       await setupUserLocator(email);
 
       if (!mounted) {
         return;
       }
 
-      // ------------------------------------------------------------
-      // 5. Navigate only AFTER user-specific dependencies are ready
-      // ------------------------------------------------------------
+      final tasksBloc = createTasksBloc(context);
 
-      Navigator.pushReplacementNamed(
-        context,
-        TabsScreen.id,
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) =>
+              BlocProvider.value(value: tasksBloc, child: const TabsScreen()),
+        ),
       );
     } on FirebaseAuthException catch (error) {
-      _showError(
-        error.message ?? 'Login failed',
-      );
+      _showError(error.message ?? 'Login failed');
     } catch (error) {
-      _showError(
-        error.toString(),
-      );
+      _showError(error.toString());
     } finally {
       if (mounted) {
         setState(() {
@@ -240,15 +223,10 @@ class _LoginScreenState extends State<LoginScreen> {
       SnackBar(
         content: Text(
           'Error $message',
-          style: const TextStyle(
-            color: Colors.red,
-          ),
+          style: const TextStyle(color: Colors.red),
         ),
-        duration: const Duration(
-          milliseconds: 2000,
-        ),
+        duration: const Duration(milliseconds: 2000),
       ),
     );
   }
 }
-

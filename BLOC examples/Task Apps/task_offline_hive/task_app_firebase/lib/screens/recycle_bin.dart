@@ -24,9 +24,8 @@ class RecycleBin extends StatelessWidget {
                       icon: const Icon(Icons.delete_forever),
                       label: const Text('Delete all tasks'),
                     ),
-                    onTap: () => {
-                      context.read<TasksBloc>().add(DeleteAllTasks()),
-                      context.read<TasksBloc>().add(GetAllTsak()),
+                    onTap: () {
+                      context.read<TasksBloc>().add(DeleteAllTasks());
                     },
                   ),
                 ],
@@ -35,12 +34,17 @@ class RecycleBin extends StatelessWidget {
           ),
           drawer: const MyDrawer(),
           body: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Center(
-                child: Chip(label: Text('${state.removedTasks.length} Tasks')),
+                child: Chip(
+                  label: Text(
+                    '${state.removedTasks.length} Tasks',
+                  ),
+                ),
               ),
-              TasksList(tasksList: state.removedTasks),
+              TasksList(
+                tasksList: state.removedTasks,
+              ),
             ],
           ),
         );

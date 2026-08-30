@@ -5,7 +5,6 @@ import '../models/task.dart';
 import '../screens/edit_task_screen.dart';
 import 'popup_menu.dart';
 
-
 class TaskTile extends StatelessWidget {
   const TaskTile({super.key, required this.task});
 
@@ -20,30 +19,33 @@ class TaskTile extends StatelessWidget {
   }
 
   void _editTask(BuildContext context) {
+    final tasksBloc = context.read<TasksBloc>();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => SingleChildScrollView(
-        child: Container(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
+      builder: (_) => BlocProvider.value(
+        value: tasksBloc,
+        child: SingleChildScrollView(
+          child: Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: EditTaskScreen(oldTask: task),
           ),
-          child: EditTaskScreen(oldTask: task),
         ),
       ),
     );
   }
-  
+
   Widget _buildSyncIndicator(bool isSyncing) {
     if (isSyncing) {
-    return const SizedBox(
-      width: 18,
-      height: 18,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-      ),
-    );
-  }
+      return const SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
     switch (task.syncStatus) {
       case SyncStatus.synced:
         return const Icon(Icons.cloud_done, color: Colors.green, size: 18);
@@ -63,8 +65,8 @@ class TaskTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Reserved for future per-task syncing
-     final state = context.watch<TasksBloc>().state;
-     final isSyncing = state.syncingTaskIds.contains(task.id);
+    final state = context.watch<TasksBloc>().state;
+    final isSyncing = state.syncingTaskIds.contains(task.id);
 
     return Padding(
       padding: const EdgeInsets.only(left: 10),
