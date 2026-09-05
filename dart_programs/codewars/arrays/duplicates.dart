@@ -9,13 +9,14 @@ Map<int, List<String>> removeDuplicateIds(
   Map<int, List<String>> obj,
 ) {
   final seen = <String>{};
-
+  print(seen.runtimeType);
   // Process keys from largest to smallest.
   final sortedEntries = obj.entries.toList()
     ..sort((a, b) => b.key.compareTo(a.key));
 
   final result = <int, List<String>>{};
-
+  print(result.runtimeType);
+  
   for (final entry in sortedEntries) {
     final unique = <String>[];
 
