@@ -242,7 +242,6 @@ void main() {
       when(() => repository.getAll()).thenAnswer(
         (_) async => [task1, task2, completedTask, favoriteTask, removedTask],
       );
-
       return buildBloc();
     },
     act: (bloc) {

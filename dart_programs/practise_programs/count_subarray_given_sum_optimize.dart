@@ -19,5 +19,6 @@ int findAllSubarraysWithGivenSum(List<int> arr, int k) {
     }
     prefixSumCount[sum] = (prefixSumCount[sum] ?? 0) + 1;
   }
+// print(prefixSumCount);
   return count;
 }

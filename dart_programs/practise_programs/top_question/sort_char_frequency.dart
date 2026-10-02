@@ -15,7 +15,9 @@ String frequencySort(String s) {
   }
 
   var entries = freq.entries.toList();
-  print(freq.keys.toList());  
+  print(freq);
+  print(entries);
+ // print(freq.keys.toList());  
   //entries.sort((a, b) => b.value.compareTo(a.value));
   entries.sort((a, b) {
     if (a.value != b.value) {

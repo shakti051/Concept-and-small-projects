@@ -1,4 +1,5 @@
 //
+
 void main() {
   List<Map<String, dynamic>> students = [
     {
@@ -12,7 +13,7 @@ void main() {
   ];
 
   int maxScore = 0;
-
+  
   for (var student in students) {
 
     List<dynamic> scores = student["scores"];
@@ -24,6 +25,7 @@ void main() {
       }
     }
   }
+
 // List<int> allScores = students.expand((student)=> student["scores"] as List<int>).toList();
 // maxScore = allScores.reduce((a,b)=> a > b ? a:b);
   print(maxScore);

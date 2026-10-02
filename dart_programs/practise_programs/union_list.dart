@@ -4,5 +4,4 @@ void main() {
   List<int> arr2 = [2, 3, 4, 4, 5, 11, 12];
   Set<int> unionSet = {...arr1,...arr2};
   print("The union set is $unionSet"); 
-
 }

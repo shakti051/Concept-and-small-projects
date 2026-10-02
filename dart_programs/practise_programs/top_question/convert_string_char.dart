@@ -6,9 +6,12 @@
 // In a sequence of consecutive 'A's, the FIRST 'A' must remain unchanged.
 //
 // 💡 This is a string manipulation / pattern replacement problem.
+import 'dart:io';
 
 void main() {
-  String str = "AAZZAABC";
+  stdout.write("Enter string: ");
+
+  String str = stdin.readLineSync() ?? "";//"AAZZAABC";
   final result = StringBuffer();
   bool isPreviousA = false;
 
@@ -24,7 +27,7 @@ void main() {
       result.write("A");
       isPreviousA = false;
     } else {
-      result.write("ch");
+      result.write(ch);
       isPreviousA = false;
     }
   }

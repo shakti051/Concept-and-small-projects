@@ -6,6 +6,7 @@ int max = arr.reduce((a,b)=> a> b ?a:b);
 print(max);
 int min = arr.reduce((a,b)=> a< b ?a:b);
 print(min);
+
  for(int i = arr.first ; i<=arr.last;i++){
         xor^=i;
  }   

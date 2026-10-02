@@ -6,7 +6,6 @@ void main() {
   print("The max sub array product: $max");
 }
 //
-
 int maxProduct(List<int> arr) {
   int result = -1;
   int prefix = 1;
