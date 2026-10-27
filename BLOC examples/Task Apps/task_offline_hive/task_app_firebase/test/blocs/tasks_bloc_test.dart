@@ -238,6 +238,7 @@ void main() {
 
   blocTest<TasksBloc, TasksState>(
     'GetAllTsak loads and categorizes tasks',
+    
     build: () {
       when(() => repository.getAll()).thenAnswer(
         (_) async => [task1, task2, completedTask, favoriteTask, removedTask],

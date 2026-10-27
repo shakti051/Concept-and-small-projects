@@ -10,6 +10,7 @@ class User {
 
   User(this.name, this.address);
 }
+
 //shallow copy
 
 // void main() {
@@ -54,7 +55,6 @@ class User {
 //   print(copy.name);              // Rahul
 //   print(copy.address.city);      // Mumbai
 // }
-
 
 void main() {
   final original = [

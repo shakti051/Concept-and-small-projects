@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-
 import 'package:task_app_firebase/blocs/bloc_exports.dart';
 import 'package:task_app_firebase/models/task.dart';
 import 'package:task_app_firebase/screens/favorite_tasks_screen.dart';

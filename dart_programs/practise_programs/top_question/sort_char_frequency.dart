@@ -1,6 +1,5 @@
 import 'dart:math';
 //
-
 void main() {
   String str = "treaaae";
   String result = frequencySort(str);
@@ -32,6 +31,6 @@ String frequencySort(String s) {
   for (var entry in entries) {
     result.write(entry.key * entry.value);
   }
-
+  
   return result.toString();
 }

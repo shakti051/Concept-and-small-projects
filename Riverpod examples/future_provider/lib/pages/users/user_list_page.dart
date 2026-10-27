@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'user_detail_page.dart';
 import 'users_providers.dart';
 
@@ -71,7 +70,6 @@ class UserListPage extends ConsumerWidget {
               },
               itemBuilder: (BuildContext context, int index) {
                 final user = users[index];
-
                 return GestureDetector(
                   onTap: () {
                     Navigator.of(context).push(

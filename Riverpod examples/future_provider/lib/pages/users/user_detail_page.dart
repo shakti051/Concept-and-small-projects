@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'users_providers.dart';
+
 
 class UserDetailPage extends ConsumerWidget {
   final int userId;
