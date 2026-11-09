@@ -40,4 +40,4 @@ final class TickerProvider
   }
 }
 
-String _$tickerHash() => r'6ec7cd604b1f2e31b43643c9c6b45c1845fb09ad';
+String _$tickerHash() => r'506de8f6ed707fa08c6c9a46535c327aa8fce742';

@@ -27,10 +27,12 @@ void main() {
         startIndex = map[reminder]!+1;
         endIndex = i;
       }
-    }else{
-      map[sum] = i;
     }
+     // map[sum] = i;
+    // Store only the first occurrence of prefix sum.
+    map.putIfAbsent(sum, () => i);
   }
+  //
   print(maxLen);
   print(arr.sublist(startIndex,endIndex+1));
 }

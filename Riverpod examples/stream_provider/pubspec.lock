@@ -5,26 +5,18 @@ packages:
     dependency: transitive
     description:
       name: _fe_analyzer_shared
-      sha256: "9bfb8122e2505aca17219018593c384a87166cfe860d11c7ae927e7f978eb05f"
+      sha256: "1c5591cc6f252d5f440d96ab87c03e43504be552a3fa49d7cb7563f04c51fb0a"
       url: "https://pub.dev"
     source: hosted
-    version: "110.0.0"
-  analysis_server_plugin:
-    dependency: transitive
-    description:
-      name: analysis_server_plugin
-      sha256: b94419fc81828edb7870340cb64b8648e9515613d7647309d3d0ea605c6d1f95
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.25"
+    version: "111.0.0"
   analyzer:
     dependency: transitive
     description:
       name: analyzer
-      sha256: "74c36179c4de542efea24c9dff78324375e4b118a2c1e14e8a7659f457947f8d"
+      sha256: "6c39bd5486a310e56217bed7cb1691377959f31be4227e41750107db7e6dd55c"
       url: "https://pub.dev"
     source: hosted
-    version: "14.6.0"
+    version: "14.7.0"
   analyzer_buffer:
     dependency: transitive
     description:
@@ -33,14 +25,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.4"
-  analyzer_plugin:
-    dependency: transitive
-    description:
-      name: analyzer_plugin
-      sha256: d218f0916ff564cfd9dd032d11e5a990059cb66f88cc741ec6e5e55abdebefcc
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.14.19"
   args:
     dependency: transitive
     description:
@@ -451,14 +435,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.9"
-  riverpod_lint:
-    dependency: "direct dev"
-    description:
-      name: riverpod_lint
-      sha256: "215cb3cd54a97e09bc3512535fa4e8bedd3bf2a06dc2ae015ac8e0050fc71bd1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.9"
   shelf:
     dependency: transitive
     description:
@@ -624,14 +600,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.4"
-  yaml_edit:
-    dependency: transitive
-    description:
-      name: yaml_edit
-      sha256: "07c9e63ba42519745182b88ca12264a7ba2484d8239958778dfe4d44fe760488"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.4"
 sdks:
   dart: ">=3.13.1 <4.0.0"
   flutter: ">=3.18.0-18.0.pre.54"
